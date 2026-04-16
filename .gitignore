@@ -1,0 +1,15 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+pdos_results/
+
+# Generated datasets (too large for GitHub – >100 MB)
+cellulose_full_dataset.xyz
+*.xyz
+
+# Virtual environments
+.venv
