@@ -8,9 +8,9 @@ wheels/
 pdos_results/
 
 # Generated datasets (too large for GitHub – >100 MB)
-cellulose_full_dataset.xyz
-cellulose_finetuning.db
+*.db
 *.xyz
+*.ckpt
 
 # Virtual environments
 .venv
