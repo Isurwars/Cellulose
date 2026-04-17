@@ -25,6 +25,7 @@ from orb_models.common.atoms.abstract_atoms_adapter import AbstractAtomsAdapter
 from orb_models.common.dataset import augmentations, property_definitions
 from orb_models.common.dataset.ase_sqlite_dataset import AseSqliteDataset
 from orb_models.common.dataset.loaders import worker_init_fn
+from orb_models.common.dataset.property_definitions import PROPERTIES, PropertyDefinition
 from orb_models.common.models.base import ModelMixin
 from orb_models.common.training.metrics import ScalarMetricTracker
 from orb_models.common.training.util import get_optim, init_device
@@ -86,7 +87,8 @@ def init_wandb_from_config(dataset: str, job_type: str, entity: str) -> Any:
 
 def finetune(
     model: ModelMixin,
-    spectral_head: nn.Module, # ADDED: Pass the new head to the training loop
+    eigenvalue_head: nn.Module, # CHANGED: Added eigenvalue_head
+    weight_head: nn.Module,     # CHANGED: Added weight_head
     optimizer: torch.optim.Optimizer,
     dataloader: DataLoader,
     lr_scheduler: _LRScheduler | None = None,
@@ -119,7 +121,8 @@ def finetune(
 
     # Set the model to "train" mode.
     model.train()
-    spectral_head.train() # ADDED: Set spectral head to train mode
+    eigenvalue_head.train() # CHANGED: Added eigenvalue_head
+    weight_head.train()     # CHANGED: Added weight_head
 
     # Get tqdm for the training batches
     batch_generator = iter(dataloader)
@@ -164,29 +167,32 @@ def finetune(
             batch_outputs = model.loss(batch)
             base_loss = batch_outputs.loss
             
-            # 2. Spectral Forward Pass
-            # Extract internal node features from the base GNN
+            # 2. Extract internal node features from the base GNN
             gnn_out = model.model(batch)
-            node_features = gnn_out["node_features"]
+            node_features = gnn_out["node_features"] # Shape: (Total_Atoms, 256)
             
-            # Pool node features into graph features to predict global eigenvalues
-            batch_idx = torch.arange(len(batch.n_node), device=device).repeat_interleave(batch.n_node)
-            graph_features = scatter_mean(node_features, batch_idx, dim=0)
+            # 3. Predict Node-Level Weights
+            pred_weights = weight_head(node_features) # Shape: (Total_Atoms, 250)
             
-            pred_eigenvalues = spectral_head(graph_features)
+            # 4. Predict Graph-Level Eigenvalues
+            graph_features = node_features.mean(dim=0, keepdim=True)
             
-            if 'eigenvalues' in batch.system_targets:
-                true_eigenvalues = batch.system_targets['eigenvalues']
-                spectral_loss = nn.functional.mse_loss(pred_eigenvalues, true_eigenvalues)
-            else:
-                raise ValueError("Target 'eigenvalues' not found in batch. Ensure target_config includes it.")
+            pred_eigenvalues = eigenvalue_head(graph_features) # Shape: (Batch_Size, 250)
             
-            # 4. Total Loss
-            # Weigh the spectral loss so it doesn't overpower the force learning
-            total_loss = base_loss + (0.1 * spectral_loss)
+            # 5. Loss Calculation
+            # Extract ground truth from the specific target dictionaries
+            true_eigenvalues = batch.system_targets['eigenvalues']
+            true_weights = batch.node_targets['weights']
             
-            # Add spectral metrics to the log
-            batch_outputs.log["loss/spectral"] = spectral_loss.detach()
+            eig_loss = nn.functional.mse_loss(pred_eigenvalues, true_eigenvalues)
+            weight_loss = nn.functional.mse_loss(pred_weights, true_weights)
+            
+            # Combine losses. Weights are kept at 0.1 to avoid destabilizing force gradients
+            total_loss = base_loss + (0.1 * eig_loss) + (0.1 * weight_loss)
+            
+            # Log the individual losses
+            batch_outputs.log["loss/eigenvalues"] = eig_loss.detach()
+            batch_outputs.log["loss/weights"] = weight_loss.detach()
             batch_outputs.log["loss/total"] = total_loss.detach()
             metrics.update(batch_outputs.log)
             
@@ -197,7 +203,8 @@ def finetune(
 
         if clip_grad is not None:
             torch.nn.utils.clip_grad_norm_(model.parameters(), clip_grad)
-            torch.nn.utils.clip_grad_norm_(spectral_head.parameters(), clip_grad) # ADDED: Clip spectral head
+            torch.nn.utils.clip_grad_norm_(eigenvalue_head.parameters(), clip_grad) # CHANGED: Added eigenvalue_head
+            torch.nn.utils.clip_grad_norm_(weight_head.parameters(), clip_grad)     # CHANGED: Added weight_head
 
         optimizer.step()
 
@@ -360,6 +367,15 @@ def load_custom_reference_energies(filepath: str) -> torch.Tensor:
 
     return ref_energies
 
+# ---------------------------------------------------------
+# ADDED: Top-level extraction functions (Picklable for DataLoader)
+# ---------------------------------------------------------
+def extract_eigenvalues(row, dataset=None):
+    return torch.tensor(row.data["eigenvalues"], dtype=torch.float32)
+
+def extract_weights(row, dataset=None):
+    return torch.tensor(row.data["weights"], dtype=torch.float32)
+# ---------------------------------------------------------
 
 def run(args):
     """Training Loop.
@@ -446,17 +462,21 @@ def run(args):
     logging.info(f"Base Model has {model_params:,} trainable parameters.")
 
     # ---------------------------------------------------------
-    # ADDED: Define a standard PyTorch Sequential Head for Eigenvalues
-    latent_dim = model.model.node_embed_size
-    
-    spectral_head = nn.Sequential(
+    # ADDED: Separate Heads for Graph (Eigenvalues) and Nodes (Weights)
+    # ---------------------------------------------------------
+    latent_dim = 256  # Matched to your 0.6.2 omol model
+
+    eigenvalue_head = nn.Sequential(
         nn.Linear(latent_dim, 1024),
         nn.SiLU(),
-        nn.Linear(1024, 250)  # Outputting the 250 CASTEP eigenvalues
+        nn.Linear(1024, 250)  # 250 bands per graph
     ).to(device)
-    
-    spectral_params = sum(p.numel() for p in spectral_head.parameters() if p.requires_grad)
-    logging.info(f"Spectral Head has {spectral_params:,} trainable parameters.")
+
+    weight_head = nn.Sequential(
+        nn.Linear(latent_dim, 1024),
+        nn.SiLU(),
+        nn.Linear(1024, 250)  # 250 weights per atom
+    ).to(device)
     # ---------------------------------------------------------
 
     model.to(device=device)
@@ -470,7 +490,8 @@ def run(args):
             params.append({"params": param, "weight_decay": 0.0})
         else:
             params.append({"params": param})
-    params.append({"params": spectral_head.parameters()})
+    params.append({"params": eigenvalue_head.parameters()})
+    params.append({"params": weight_head.parameters()})
 
     optimizer = torch.optim.Adam(params, lr=args.lr)
 
@@ -496,8 +517,24 @@ def run(args):
             )
             wandb.define_metric("step")
             wandb.define_metric("finetune_step/*", step_metric="step")
-
-    # ADDED: Include 'eigenvalues' in the graph target config so the dataloader fetches it from DB
+    # ---------------------------------------------------------
+    # ADDED: Register Custom CASTEP Properties in the Orb Registry
+    # ---------------------------------------------------------
+    PROPERTIES["eigenvalues"] = PropertyDefinition(
+        name="eigenvalues",
+        dim=250,          # The 250 energy bands
+        domain="graph",   # Belongs to the entire system
+        row_to_property_fn=extract_eigenvalues
+    )
+    
+    PROPERTIES["weights"] = PropertyDefinition(
+        name="weights",
+        dim=250,          # The 250 PDOS weights per atom
+        domain="node",    # Belongs to each individual atom
+        row_to_property_fn=extract_weights
+    )
+    # ---------------------------------------------------------
+    # Include 'eigenvalues' (graph) and 'weights' (node) in targets
     graph_targets = ["energy", "stress"] if model.has_stress else ["energy"]
     graph_targets.append("eigenvalues")
     loader_args = dict(
@@ -505,7 +542,7 @@ def run(args):
         dataset_path=args.data_path,
         num_workers=args.num_workers,
         batch_size=args.batch_size,
-        target_config={"graph": graph_targets, "node": ["forces"]},
+        target_config={"graph": graph_targets, "node": ["forces", "weights"]},
     )
     
     train_loader = build_train_loader(
@@ -522,7 +559,8 @@ def run(args):
         print(f"Start epoch: {epoch} training...")
         finetune(
             model=model,
-            spectral_head=spectral_head, # ADDED: Pass spectral head
+            eigenvalue_head=eigenvalue_head, # CHANGED: Added eigenvalue_head
+            weight_head=weight_head,     # CHANGED: Added weight_head
             optimizer=optimizer,
             dataloader=train_loader,
             lr_scheduler=lr_scheduler,
@@ -537,11 +575,11 @@ def run(args):
             if not os.path.exists(args.checkpoint_path):
                 os.makedirs(args.checkpoint_path)
             
-            # ADDED: Save both the base model and the spectral head state
             checkpoint_data = {
                 "epoch": epoch,
                 "state_dict": model.state_dict(),
-                "spectral_head_state": spectral_head.state_dict(),
+                "eigenvalue_head_state": eigenvalue_head.state_dict(),
+                "weight_head_state": weight_head.state_dict(),
                 "optimizer": optimizer.state_dict()
             }
             
