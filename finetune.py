@@ -97,6 +97,7 @@ def finetune(
     log_freq: float = 10,
     device: torch.device = torch.device("cpu"),
     epoch: int = 0,
+    accumulation_steps: int = 4,
 ):
     """Train for a fixed number of steps.
 
@@ -121,8 +122,8 @@ def finetune(
 
     # Set the model to "train" mode.
     model.train()
-    eigenvalue_head.train() # CHANGED: Added eigenvalue_head
-    weight_head.train()     # CHANGED: Added weight_head
+    eigenvalue_head.train()
+    weight_head.train()
 
     # Get tqdm for the training batches
     batch_generator = iter(dataloader)
@@ -142,8 +143,6 @@ def finetune(
     while True:
         if num_steps and i == num_steps:
             break
-
-        optimizer.zero_grad(set_to_none=True)
 
         step_metrics = {
             "batch_size": 0.0,
@@ -190,6 +189,8 @@ def finetune(
             # Combine losses. Weights are kept at 0.1 to avoid destabilizing force gradients
             total_loss = base_loss + (0.1 * eig_loss) + (0.1 * weight_loss)
             
+            scaled_loss = total_loss / accumulation_steps
+
             # Log the individual losses
             batch_outputs.log["loss/eigenvalues"] = eig_loss.detach()
             batch_outputs.log["loss/weights"] = weight_loss.detach()
@@ -198,18 +199,25 @@ def finetune(
             
         if torch.isnan(total_loss):
             raise ValueError("nan loss encountered")
-            
-        total_loss.backward()
 
-        if clip_grad is not None:
-            torch.nn.utils.clip_grad_norm_(model.parameters(), clip_grad)
-            torch.nn.utils.clip_grad_norm_(eigenvalue_head.parameters(), clip_grad) # CHANGED: Added eigenvalue_head
-            torch.nn.utils.clip_grad_norm_(weight_head.parameters(), clip_grad)     # CHANGED: Added weight_head
+          
+        # CHANGED: Backward pass on the scaled loss
+        scaled_loss.backward()
 
-        optimizer.step()
+        # ADDED: Only step the optimizer every `accumulation_steps` batches
+        if (i + 1) % accumulation_steps == 0 or (i + 1) == num_training_batches:
+            if clip_grad is not None:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), clip_grad)
+                torch.nn.utils.clip_grad_norm_(eigenvalue_head.parameters(), clip_grad) 
+                torch.nn.utils.clip_grad_norm_(weight_head.parameters(), clip_grad)     
 
-        if lr_scheduler is not None:
-            lr_scheduler.step()
+            optimizer.step()
+
+            if lr_scheduler is not None:
+                lr_scheduler.step()
+                
+            # ADDED: Clear gradients after the step is taken
+            optimizer.zero_grad(set_to_none=True)
 
         metrics.update(step_metrics)
 
@@ -218,17 +226,10 @@ def finetune(
             if run is not None:
                 step = (epoch * num_training_batches) + i
                 if run.sweep_id is not None:
-                    run.log(
-                        {"loss": metrics_dict["loss/total"]}, # ADDED: Log total loss
-                        commit=False,
-                    )
-                run.log(
-                    {"step": step},
-                    commit=False,
-                )
+                    run.log({"loss": metrics_dict["loss/total"]}, commit=False)
+                run.log({"step": step}, commit=False)
                 run.log(prefix_keys(metrics_dict, "finetune_step"), commit=True)
 
-        # Finished a single full step!
         i += 1
 
     return metrics.get_metrics()
@@ -480,8 +481,8 @@ def run(args):
     # ---------------------------------------------------------
 
     model.to(device=device)
-    total_steps = args.max_epochs * args.num_steps
-    
+    total_steps = (args.max_epochs * args.num_steps) // args.accumulation_steps
+
     import re
     params = []
     # Split parameters based on the regex
@@ -559,8 +560,8 @@ def run(args):
         print(f"Start epoch: {epoch} training...")
         finetune(
             model=model,
-            eigenvalue_head=eigenvalue_head, # CHANGED: Added eigenvalue_head
-            weight_head=weight_head,     # CHANGED: Added weight_head
+            eigenvalue_head=eigenvalue_head,
+            weight_head=weight_head,
             optimizer=optimizer,
             dataloader=train_loader,
             lr_scheduler=lr_scheduler,
@@ -568,6 +569,7 @@ def run(args):
             device=device,
             num_steps=num_steps,
             epoch=epoch,
+            accumulation_steps=args.accumulation_steps,
         )
 
         # Save every X epochs and final epoch
@@ -620,6 +622,7 @@ def main():
     parser.add_argument("--equigrad_loss_weight", default=None, type=float)
     parser.add_argument("--trainable_reference_energies", action="store_true")
     parser.add_argument("--custom_reference_energies", default=None, type=str)
+    parser.add_argument("--accumulation_steps", default=4, type=int, help="Number of batches to accumulate gradients")
 
     args = parser.parse_args()
     run(args)

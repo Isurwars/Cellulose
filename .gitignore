@@ -11,6 +11,7 @@ pdos_results/
 *.db
 *.xyz
 *.ckpt
+*.png
 
 # Virtual environments
 .venv
