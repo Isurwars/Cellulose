@@ -197,8 +197,11 @@ def finetune(
             batch_outputs.log["loss/total"] = total_loss.detach()
             metrics.update(batch_outputs.log)
             
-        if torch.isnan(total_loss):
-            raise ValueError("nan loss encountered")
+        if torch.isnan(scaled_loss):
+            print(f"\n[Warning] NaN loss encountered at step {i}. Skipping bad frame...")
+            optimizer.zero_grad(set_to_none=True)
+            i += 1
+            continue
 
           
         # CHANGED: Backward pass on the scaled loss
