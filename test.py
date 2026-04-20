@@ -19,12 +19,13 @@ eigenvalue_head = nn.Sequential(
 weight_head = nn.Sequential(
     nn.Linear(latent_dim, 1024),
     nn.SiLU(),
-    nn.Linear(1024, 250)
+    nn.Linear(1024, 250),
+    nn.Softplus()
 ).to(device)
 
 # 2. Load Model and Checkpoint
 model, atoms_adapter = orb_v3_conservative_omol(train=False, device=device)
-checkpoint = torch.load("ckpts/checkpoint_epoch100.ckpt", map_location=device)
+checkpoint = torch.load("ckpts/checkpoint_epoch20.ckpt", map_location=device)
 
 model.load_state_dict(checkpoint["state_dict"])
 eigenvalue_head.load_state_dict(checkpoint["eigenvalue_head_state"])

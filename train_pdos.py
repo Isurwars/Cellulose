@@ -162,59 +162,39 @@ def finetune(
         step_metrics["batch_num_nodes"] += batch.n_node.sum()
 
         with torch.autocast("cuda", enabled=False):
-            # 1. Base Model Forward Pass (Bypassing internal model.loss)
-            base_out = model(batch)
-            
-            # Extract Predictions
-            pred_energy = base_out["energy"].view(-1)
-            pred_forces = base_out["grad_forces"]
-            
-            # Extract Ground Truth
-            true_energy = batch.system_targets["energy"].view(-1)
-            true_forces = batch.node_targets["forces"]
+            # 1. Base Model Forward Pass (Energy & Forces)
+            batch_outputs = model.loss(batch)
+            base_loss = batch_outputs.loss
             
             # 2. Extract internal node features from the base GNN
             gnn_out = model.model(batch)
             node_features = gnn_out["node_features"] # Shape: (Total_Atoms, 256)
             
-            # 3. Predict Custom Heads
-            pred_weights = weight_head(node_features) 
-            graph_features = node_features.mean(dim=0, keepdim=True)
-            pred_eigenvalues = eigenvalue_head(graph_features) 
+            # 3. Predict Node-Level Weights
+            pred_weights = weight_head(node_features) # Shape: (Total_Atoms, 250)
             
-            # 4. Extract Custom Ground Truth
+            # 4. Predict Graph-Level Eigenvalues
+            graph_features = node_features.mean(dim=0, keepdim=True)
+            
+            pred_eigenvalues = eigenvalue_head(graph_features) # Shape: (Batch_Size, 250)
+            
+            # 5. Loss Calculation
+            # Extract ground truth from the specific target dictionaries
             true_eigenvalues = batch.system_targets['eigenvalues']
             true_weights = batch.node_targets['weights']
             
-            # ---------------------------------------------------------
-            # 5. CUSTOM LOSS CALCULATIONS
-            # ---------------------------------------------------------
-            # Energy: Huber Loss (ignores spikes) + Per-Atom Scaling
-            raw_energy_loss = torch.nn.functional.huber_loss(pred_energy, true_energy, delta=0.5)
-            total_atoms = batch.n_node.sum().float()
-            scaled_energy_loss = raw_energy_loss / total_atoms
+            #eig_loss = nn.functional.mse_loss(pred_eigenvalues, true_eigenvalues)
+            weight_loss =nn.functional.l1_loss(pred_weights, true_weights)
             
-            # Forces: Standard MSE
-            forces_loss = torch.nn.functional.mse_loss(pred_forces, true_forces)
-            
-            # Custom Heads
-            eig_loss = nn.functional.mse_loss(pred_eigenvalues, true_eigenvalues)
-            weight_loss = nn.functional.l1_loss(pred_weights, true_weights) # L1 for sparse PDOS
-            
-            # Combine losses. (Energy is scaled by 10 to balance the per-atom division)
-            total_loss = (10.0 * scaled_energy_loss) + (1.0 * forces_loss) + (0.01 * eig_loss) + (0.01 * weight_loss)
+            # Combine losses. Weights are kept at 0.1 to avoid destabilizing force gradients
+            total_loss = weight_loss
             
             scaled_loss = total_loss / accumulation_steps
 
-            # 6. Logging
-            log_dict = {
-                "loss/energy": scaled_energy_loss.detach(),
-                "loss/forces": forces_loss.detach(),
-                "loss/eigenvalues": eig_loss.detach(),
-                "loss/weights": weight_loss.detach(),
-                "loss/total": total_loss.detach()
-            }
-            metrics.update(log_dict)
+            # Log the individual losses
+            batch_outputs.log["loss/weights"] = weight_loss.detach()
+            batch_outputs.log["loss/total"] = total_loss.detach()
+            metrics.update(batch_outputs.log)
             
         if torch.isnan(scaled_loss):
             print(f"\n[Warning] NaN loss encountered at step {i}. Skipping bad frame...")
@@ -507,17 +487,27 @@ def run(args):
     total_steps = (args.max_epochs * args.num_steps) // args.accumulation_steps
 
     import re
-    params = []
-    # Split parameters based on the regex
-    for name, param in model.named_parameters():
-        if re.search(r"(.*bias|.*layer_norm.*|.*batch_norm.*)", name):
-            params.append({"params": param, "weight_decay": 0.0})
-        else:
-            params.append({"params": param})
-    params.append({"params": eigenvalue_head.parameters()})
-    params.append({"params": weight_head.parameters()})
+    # ---------------------------------------------------------
+    # PHASE 2 SETUP: Freeze base physics and train only PDOS weights
+    # ---------------------------------------------------------
+    logging.info("Loading Phase 1 Checkpoint...")
+    checkpoint = torch.load("ckpts_good/checkpoint_epoch100.ckpt", map_location=device, weights_only=True)
+    
+    # Load the perfected weights
+    model.load_state_dict(checkpoint["state_dict"])
+    eigenvalue_head.load_state_dict(checkpoint["eigenvalue_head_state"])
+    # We DO NOT load weight_head_state so the new ReLU head initializes from scratch
 
+    # Freeze the base model and eigenvalue head
+    for param in model.parameters():
+        param.requires_grad = False
+    for param in eigenvalue_head.parameters():
+        param.requires_grad = False
+        
+    # The optimizer will ONLY track the 18 million parameters in the weight_head
+    params = [{"params": weight_head.parameters()}]
     optimizer = torch.optim.Adam(params, lr=args.lr)
+    # ---------------------------------------------------------
 
     div_factor = 10  
     final_div_factor = 10  

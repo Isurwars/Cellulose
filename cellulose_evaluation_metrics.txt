@@ -2,5 +2,5 @@
 Energy RMSE: 1.0625 eV
 Forces RMSE: 0.0450 eV/A
 Eigenvalues RMSE: 0.0898 eV
-Weights RMSE: 0.0285 eV
+Weights RMSE: 5.4192 eV
 Baseline Offset Applied: -12974.0420 eV
