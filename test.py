@@ -24,7 +24,7 @@ weight_head = nn.Sequential(
 
 # 2. Load Model and Checkpoint
 model, atoms_adapter = orb_v3_conservative_omol(train=False, device=device)
-checkpoint = torch.load("ckpts/checkpoint_epoch95.ckpt", map_location=device)
+checkpoint = torch.load("ckpts/checkpoint_epoch100.ckpt", map_location=device)
 
 model.load_state_dict(checkpoint["state_dict"])
 eigenvalue_head.load_state_dict(checkpoint["eigenvalue_head_state"])
@@ -38,7 +38,8 @@ weight_head.eval()
 results = {
     "energy_true": [], "energy_pred": [],
     "forces_true": [], "forces_pred": [],
-    "eigs_true": [], "eigs_pred": []
+    "eigs_true": [], "eigs_pred": [],
+    "weights_true": [], "weights_pred": []
 }
 
 # 4. Loop over entire DB
@@ -72,6 +73,7 @@ for row in db.select():
         graph_feats = node_feats.mean(dim=0, keepdim=True)
         
         pred_eigs = eigenvalue_head(graph_feats).cpu().numpy().flatten()
+        pred_weights = weight_head(node_feats).cpu().numpy().flatten()
         pred_energy = base_out["energy"].cpu().numpy().item()
         pred_forces = base_out["grad_forces"].cpu().numpy()
 
@@ -97,6 +99,9 @@ for row in db.select():
     results["eigs_true"].append(row.data["eigenvalues"])
     results["eigs_pred"].append(pred_eigs)
 
+    results["weights_true"].append(row.data["weights"])
+    results["weights_pred"].append(pred_weights)
+
 # 5. Calculate Metrics
 energy_true = np.array(results["energy_true"])
 energy_pred = np.array(results["energy_pred"])
@@ -110,13 +115,20 @@ energy_rmse = get_rmse(results["energy_true"], aligned_energy_pred)
 forces_rmse = get_rmse(np.concatenate(results["forces_true"]), np.concatenate(results["forces_pred"]))
 eigs_rmse = get_rmse(results["eigs_true"], results["eigs_pred"])
 
+# Flatten both arrays completely so they are simple 1D lists of ~18 million numbers
+w_true_flat = np.array(results["weights_true"]).flatten()
+w_pred_flat = np.array(results["weights_pred"]).flatten()
+
+weights_rmse = get_rmse(w_true_flat, w_pred_flat)
+
 print(f"\n--- Final Metrics ---")
 print(f"Energy RMSE: {energy_rmse:.4f} eV")
 print(f"Forces RMSE: {forces_rmse:.4f} eV/Å")
 print(f"Eigenvalues RMSE: {eigs_rmse:.4f} eV")
+print(f"Weights RMSE: {weights_rmse:.4f} eV")
 
 # 6. Plotting Parity Graphs
-fig, ax = plt.subplots(1, 3, figsize=(18, 5))
+fig, ax = plt.subplots(1, 4, figsize=(24, 5))
 
 # Energy Parity
 ax[0].scatter(energy_true, aligned_energy_pred, alpha=0.5)
@@ -144,6 +156,72 @@ ax[2].set_title(f"Eigenvalues (RMSE: {eigs_rmse:.3f} eV)")
 ax[2].set_xlabel("DFT Eigenvalues")
 ax[2].set_ylabel("ML Predicted")
 
+# Weights Parity
+weights_true = np.array(results["weights_true"]).flatten()
+weights_pred = np.array(results["weights_pred"]).flatten()
+ax[3].scatter(weights_true, weights_pred, alpha=0.1, s=0.5)
+ax[3].plot([weights_true.min(), weights_true.max()], [weights_true.min(), weights_true.max()], 'r--')
+ax[3].set_title(f"Weights (RMSE: {weights_rmse:.3f} eV)")
+ax[3].set_xlabel("DFT Weights")
+ax[3].set_ylabel("ML Predicted")
+
 plt.tight_layout()
 plt.savefig("cellulose_evaluation_parity.png")
+
+# 7. Exporting Data to CSV for OriginPro
+print("\nExporting raw data to CSV files...")
+
+# 1. Energy CSV (1 row per frame)
+np.savetxt(
+    "cellulose_energy.csv", 
+    np.column_stack((energy_true, aligned_energy_pred)), 
+    delimiter=",", 
+    header="Energy_True_eV,Energy_Pred_eV", 
+    comments="" # Removes the '#' at the start of the header
+)
+
+# 2. Forces CSV (Flattened: 1 row per force component across all frames)
+forces_true_flat = np.concatenate(results["forces_true"]).flatten()
+forces_pred_flat = np.concatenate(results["forces_pred"]).flatten()
+np.savetxt(
+    "cellulose_forces.csv", 
+    np.column_stack((forces_true_flat, forces_pred_flat)), 
+    delimiter=",", 
+    header="Forces_True_eV_A,Forces_Pred_eV_A", 
+    comments=""
+)
+
+# 3. Eigenvalues CSV (Flattened: 1 row per eigenvalue across all frames)
+eigs_true_flat = np.array(results["eigs_true"]).flatten()
+eigs_pred_flat = np.array(results["eigs_pred"]).flatten()
+np.savetxt(
+    "cellulose_eigenvalues.csv", 
+    np.column_stack((eigs_true_flat, eigs_pred_flat)), 
+    delimiter=",", 
+    header="Eigenvalues_True_eV,Eigenvalues_Pred_eV", 
+    comments=""
+)
+
+# 4. Weights CSV (Flattened: 1 row per weight across all frames)
+weights_true_flat = np.array(results["weights_true"]).flatten()
+weights_pred_flat = np.array(results["weights_pred"]).flatten()
+np.savetxt(
+    "cellulose_weights.csv", 
+    np.column_stack((weights_true_flat, weights_pred_flat)), 
+    delimiter=",", 
+    header="Weights_True_eV,Weights_Pred_eV", 
+    comments=""
+)
+
+# Save the quick summary text file
+with open("cellulose_evaluation_metrics.txt", "w") as f:
+    f.write("--- Final MLIP Evaluation Metrics ---\n")
+    f.write(f"Energy RMSE: {energy_rmse:.4f} eV\n")
+    f.write(f"Forces RMSE: {forces_rmse:.4f} eV/A\n")
+    f.write(f"Eigenvalues RMSE: {eigs_rmse:.4f} eV\n")
+    f.write(f"Weights RMSE: {weights_rmse:.4f} eV\n")
+    f.write(f"Baseline Offset Applied: {baseline_offset:.4f} eV\n")
+
+print("Data successfully saved to 3 CSV files and the metrics summary!")
+
 plt.show()

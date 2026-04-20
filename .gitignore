@@ -12,6 +12,7 @@ pdos_results/
 *.xyz
 *.ckpt
 *.png
+*.csv
 
 # Virtual environments
 .venv
