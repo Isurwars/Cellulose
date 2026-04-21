@@ -161,55 +161,36 @@ def finetune(
         step_metrics["batch_num_edges"] += batch.n_edge.sum()
         step_metrics["batch_num_nodes"] += batch.n_node.sum()
 
-        with torch.autocast("cuda", enabled=False):
-            # 1. Base Model Forward Pass (Bypassing internal model.loss)
-            base_out = model(batch)
-            
-            # Extract Predictions
-            pred_energy = base_out["energy"].view(-1)
-            pred_forces = base_out["grad_forces"]
-            
-            # Extract Ground Truth
-            true_energy = batch.system_targets["energy"].view(-1)
-            true_forces = batch.node_targets["forces"]
-            
+        with torch.autocast("cuda", enabled=True, dtype=torch.bfloat16):
+            # 1. Base Model Forward Pass
+            batch_outputs = model.loss(batch)
+            base_loss = batch_outputs.loss
+
             # 2. Extract internal node features from the base GNN
             gnn_out = model.model(batch)
-            node_features = gnn_out["node_features"] # Shape: (Total_Atoms, 256)
+            node_features = gnn_out["node_features"].detach()
+            graph_features = node_features.mean(dim=0, keepdim=True)
             
             # 3. Predict Custom Heads
             pred_weights = weight_head(node_features) 
-            graph_features = node_features.mean(dim=0, keepdim=True)
             pred_eigenvalues = eigenvalue_head(graph_features) 
             
             # 4. Extract Custom Ground Truth
             true_eigenvalues = batch.system_targets['eigenvalues']
             true_weights = batch.node_targets['weights']
             
-            # ---------------------------------------------------------
-            # 5. CUSTOM LOSS CALCULATIONS
-            # ---------------------------------------------------------
-            # Energy: Huber Loss (ignores spikes) + Per-Atom Scaling
-            raw_energy_loss = torch.nn.functional.huber_loss(pred_energy, true_energy, delta=0.5)
-            total_atoms = batch.n_node.sum().float()
-            scaled_energy_loss = raw_energy_loss / total_atoms
-            
-            # Forces: Standard MSE
-            forces_loss = torch.nn.functional.mse_loss(pred_forces, true_forces)
-            
-            # Custom Heads
+            # 5. Custom Heads loss calculation
             eig_loss = nn.functional.mse_loss(pred_eigenvalues, true_eigenvalues)
-            weight_loss = nn.functional.l1_loss(pred_weights, true_weights) # L1 for sparse PDOS
+            squared_errors = (pred_weights - true_weights) ** 2
+            peak_multiplier = 1.0 + (true_weights * 20.0)
+            weight_loss = torch.mean(squared_errors * peak_multiplier)
             
-            # Combine losses. (Energy is scaled by 10 to balance the per-atom division)
-            total_loss = (10.0 * scaled_energy_loss) + (1.0 * forces_loss) + (0.01 * eig_loss) + (0.01 * weight_loss)
+            total_loss = base_loss + eig_loss + (10.0 *weight_loss)
             
             scaled_loss = total_loss / accumulation_steps
 
             # 6. Logging
             log_dict = {
-                "loss/energy": scaled_energy_loss.detach(),
-                "loss/forces": forces_loss.detach(),
                 "loss/eigenvalues": eig_loss.detach(),
                 "loss/weights": weight_loss.detach(),
                 "loss/total": total_loss.detach()
@@ -519,6 +500,23 @@ def run(args):
 
     optimizer = torch.optim.Adam(params, lr=args.lr)
 
+    start_epoch = 0
+    if args.resume_from_checkpoint:
+        logging.info(f"Resuming from checkpoint: {args.resume_from_checkpoint}")
+        checkpoint = torch.load(args.resume_from_checkpoint, map_location=device)
+        model.load_state_dict(checkpoint["state_dict"])
+        eigenvalue_head.load_state_dict(checkpoint["eigenvalue_head_state"])
+        weight_head.load_state_dict(checkpoint["weight_head_state"])
+        try:
+            optimizer.load_state_dict(checkpoint["optimizer"])
+        except ValueError as e:
+            logging.warning(f"Could not load optimizer state (might be incompatible): {e}")
+        start_epoch = checkpoint.get("epoch", -1) + 1
+        logging.info(f"Resumed at epoch: {start_epoch}")
+
+    past_steps = (start_epoch * args.num_steps) // args.accumulation_steps
+    last_step = past_steps - 1 if past_steps > 0 else -1
+
     div_factor = 10  
     final_div_factor = 10  
     lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
@@ -528,7 +526,15 @@ def run(args):
         pct_start=0.05,
         div_factor=div_factor,
         final_div_factor=final_div_factor,
+        last_epoch=last_step,
     )
+
+    if args.resume_from_checkpoint and "lr_scheduler" in checkpoint:
+        try:
+            lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
+            logging.info("Loaded lr_scheduler state from checkpoint.")
+        except Exception as e:
+            logging.warning(f"Could not load lr_scheduler state: {e}")
     
     wandb_run = None
     if args.wandb:
@@ -577,7 +583,6 @@ def run(args):
     logging.info("Starting training!")
 
     num_steps = args.num_steps
-    start_epoch = 0
 
     for epoch in range(start_epoch, args.max_epochs):
         print(f"Start epoch: {epoch} training...")
@@ -605,7 +610,8 @@ def run(args):
                 "state_dict": model.state_dict(),
                 "eigenvalue_head_state": eigenvalue_head.state_dict(),
                 "weight_head_state": weight_head.state_dict(),
-                "optimizer": optimizer.state_dict()
+                "optimizer": optimizer.state_dict(),
+                "lr_scheduler": lr_scheduler.state_dict()
             }
             
             torch.save(
@@ -637,6 +643,7 @@ def main():
     parser.add_argument("--save_every_x_epochs", default=5, type=int)
     parser.add_argument("--num_steps", default=100, type=int)
     parser.add_argument("--checkpoint_path", default=os.path.join(os.getcwd(), "ckpts"), type=str)
+    parser.add_argument("--resume_from_checkpoint", default=None, type=str, help="Path to checkpoint to resume training.")
     parser.add_argument("--lr", default=3e-4, type=float)
     parser.add_argument("--base_model", default="orb_v3_conservative_inf_omat", type=str)
     parser.add_argument("--energy_loss_weight", default=0.0, type=float)

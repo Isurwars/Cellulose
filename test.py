@@ -25,7 +25,7 @@ weight_head = nn.Sequential(
 
 # 2. Load Model and Checkpoint
 model, atoms_adapter = orb_v3_conservative_omol(train=False, device=device)
-checkpoint = torch.load("ckpts/checkpoint_epoch20.ckpt", map_location=device)
+checkpoint = torch.load("ckpts/checkpoint_epoch50.ckpt", map_location=device)
 
 model.load_state_dict(checkpoint["state_dict"])
 eigenvalue_head.load_state_dict(checkpoint["eigenvalue_head_state"])
@@ -224,5 +224,3 @@ with open("cellulose_evaluation_metrics.txt", "w") as f:
     f.write(f"Baseline Offset Applied: {baseline_offset:.4f} eV\n")
 
 print("Data successfully saved to 3 CSV files and the metrics summary!")
-
-plt.show()
