@@ -161,6 +161,9 @@ def finetune(
         step_metrics["batch_num_edges"] += batch.n_edge.sum()
         step_metrics["batch_num_nodes"] += batch.n_node.sum()
 
+        # Use bfloat16 — the orb model has float32 LayerNorm weights;
+        # float16 autocast feeds fp16 activations into those, causing a
+        # kernel dispatch mismatch. bfloat16 is the model's native autocast dtype.
         with torch.autocast("cuda", enabled=True, dtype=torch.bfloat16):
             # 1. Base Model Forward Pass
             batch_outputs = model.loss(batch)
@@ -168,37 +171,62 @@ def finetune(
 
             # 2. Extract internal node features from the base GNN
             gnn_out = model.model(batch)
-            node_features = gnn_out["node_features"].detach()
-            graph_features = node_features.mean(dim=0, keepdim=True)
-            
-            # 3. Predict Custom Heads
-            pred_weights = weight_head(node_features) 
-            pred_eigenvalues = eigenvalue_head(graph_features) 
-            
-            # 4. Extract Custom Ground Truth
-            true_eigenvalues = batch.system_targets['eigenvalues']
-            true_weights = batch.node_targets['weights']
-            
-            # 5. Custom Heads loss calculation
-            eig_loss = nn.functional.mse_loss(pred_eigenvalues, true_eigenvalues)
-            squared_errors = (pred_weights - true_weights) ** 2
-            peak_multiplier = 1.0 + (true_weights * 20.0)
-            weight_loss = torch.mean(squared_errors * peak_multiplier)
-            
-            total_loss = base_loss + eig_loss + (10.0 *weight_loss)
-            
-            scaled_loss = total_loss / accumulation_steps
+            node_features = gnn_out["node_features"]  # [total_nodes, latent_dim]
 
-            # 6. Logging
-            log_dict = {
-                "loss/eigenvalues": eig_loss.detach(),
-                "loss/weights": weight_loss.detach(),
-                "loss/total": total_loss.detach()
-            }
-            metrics.update(log_dict)
-            
+        # --- Custom head forward + loss in float32 (outside autocast) ---
+        # Detach node_features so the custom head gradients don't flow back
+        # through the double-forward. Cast to float32 for stable MSE.
+        node_features_f32 = node_features.detach().float()
+
+        # FIX: Correct per-graph pooling using the batch graph index.
+        #      The old code did .mean(dim=0) which collapsed ALL nodes of ALL
+        #      graphs in the batch to a single vector — wrong and unstable.
+        n_node = batch.n_node  # [num_graphs]
+        graph_idx = torch.repeat_interleave(
+            torch.arange(len(n_node), device=node_features.device), n_node
+        )  # [total_nodes]
+        graph_features_f32 = scatter_mean(node_features_f32, graph_idx, dim=0)  # [num_graphs, latent_dim]
+
+        # 3. Predict Custom Heads (float32)
+        pred_weights = weight_head(node_features_f32)          # [total_nodes, 250]
+        pred_eigenvalues = eigenvalue_head(graph_features_f32)  # [num_graphs, 250]
+
+        # 4. Extract Ground Truth — force float32
+        true_eigenvalues = batch.system_targets['eigenvalues'].to(torch.float32)
+        true_weights = batch.node_targets['weights'].to(torch.float32)
+
+        # 5. Custom Heads loss (float32, no autocast)
+        #    Soften peak_multiplier (was *20) to avoid immediate explosion.
+        eig_loss = nn.functional.mse_loss(pred_eigenvalues, true_eigenvalues)
+        squared_errors = (pred_weights - true_weights) ** 2
+        peak_multiplier = 1.0 + (true_weights.clamp(0, 10) * 5.0)
+        weight_loss = torch.mean(squared_errors * peak_multiplier)
+
+        # NaN guards: zero out any term that goes NaN and log which one
+        if torch.isnan(base_loss):
+            print(f"\n[Warning] NaN in base_loss at step {i}, zeroing.")
+            base_loss = torch.tensor(0.0, device=device)
+        if torch.isnan(eig_loss):
+            print(f"\n[Warning] NaN in eig_loss at step {i}, zeroing.")
+            eig_loss = torch.tensor(0.0, device=device)
+        if torch.isnan(weight_loss):
+            print(f"\n[Warning] NaN in weight_loss at step {i}, zeroing.")
+            weight_loss = torch.tensor(0.0, device=device)
+
+        total_loss = base_loss.float() + (0.1 * eig_loss) + (0.1 * weight_loss)
+        scaled_loss = total_loss / accumulation_steps
+
+        # 6. Logging
+        log_dict = {
+            "loss/base":        base_loss.detach(),
+            "loss/eigenvalues": eig_loss.detach(),
+            "loss/weights":     weight_loss.detach(),
+            "loss/total":       total_loss.detach()
+        }
+        metrics.update(log_dict)
+
         if torch.isnan(scaled_loss):
-            print(f"\n[Warning] NaN loss encountered at step {i}. Skipping bad frame...")
+            print(f"\n[Warning] NaN scaled_loss at step {i}. Skipping batch.")
             optimizer.zero_grad(set_to_none=True)
             i += 1
             continue
@@ -519,13 +547,12 @@ def run(args):
 
     div_factor = 10  
     final_div_factor = 10  
-    lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
+    
+    # Using CosineAnnealingLR for a less aggressive, diminishing learning curve
+    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer,
-        max_lr=args.lr * div_factor,
-        total_steps=total_steps,
-        pct_start=0.05,
-        div_factor=div_factor,
-        final_div_factor=final_div_factor,
+        T_max=total_steps,
+        eta_min=1e-6,
         last_epoch=last_step,
     )
 
