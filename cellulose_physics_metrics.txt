@@ -1,0 +1,3 @@
+Energy RMSE: 1.0342 eV
+Forces RMSE: 0.4504 eV/A
+Offset: -12989.8736 eV

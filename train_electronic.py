@@ -161,49 +161,48 @@ def finetune(
         step_metrics["batch_num_edges"] += batch.n_edge.sum()
         step_metrics["batch_num_nodes"] += batch.n_node.sum()
 
+        # Use bfloat16 — the orb model has float32 LayerNorm weights;
+        # float16 autocast feeds fp16 activations into those, causing a
+        # kernel dispatch mismatch. bfloat16 is the model's native autocast dtype.
         with torch.autocast("cuda", enabled=False):
-            # 1. Base Model Forward Pass (Energy & Forces)
-            batch_outputs = model.loss(batch)
-            base_loss = batch_outputs.loss
-            
-            # 2. Extract internal node features from the base GNN
+            # 1. Forward Pass (Ignore the physics loss!)
             gnn_out = model.model(batch)
-            node_features = gnn_out["node_features"] # Shape: (Total_Atoms, 256)
-            
-            # 3. Predict Node-Level Weights
-            pred_weights = weight_head(node_features) # Shape: (Total_Atoms, 250)
-            
-            # 4. Predict Graph-Level Eigenvalues
+            node_features = gnn_out["node_features"] 
             graph_features = node_features.mean(dim=0, keepdim=True)
             
-            pred_eigenvalues = eigenvalue_head(graph_features) # Shape: (Batch_Size, 250)
+            # 2. Predict Custom Heads
+            pred_weights = weight_head(node_features) 
+            pred_eigenvalues = eigenvalue_head(graph_features) 
             
-            # 5. Loss Calculation
-            # Extract ground truth from the specific target dictionaries
             true_eigenvalues = batch.system_targets['eigenvalues']
             true_weights = batch.node_targets['weights']
             
-            #eig_loss = nn.functional.mse_loss(pred_eigenvalues, true_eigenvalues)
-            weight_loss =nn.functional.l1_loss(pred_weights, true_weights)
+            # 3. Electronic Loss Calculations
+            eig_loss = torch.nn.functional.mse_loss(pred_eigenvalues, true_eigenvalues)
             
-            # Combine losses. Weights are kept at 0.1 to avoid destabilizing force gradients
-            total_loss = weight_loss
+            # (Using your Peak-Weighted MSE for the sparse PDOS)
+            squared_errors = (pred_weights - true_weights) ** 2
+            peak_multiplier = 1.0 + (true_weights * 20.0)
+            weight_loss = torch.mean(squared_errors * peak_multiplier)
+            
+            # 4. Total Loss ONLY cares about the electronic structure
+            total_loss = eig_loss + weight_loss
             
             scaled_loss = total_loss / accumulation_steps
 
-            # Log the individual losses
-            batch_outputs.log["loss/weights"] = weight_loss.detach()
-            batch_outputs.log["loss/total"] = total_loss.detach()
-            metrics.update(batch_outputs.log)
-            
+            # 5. Logging
+            batch_outputs = {}
+            batch_outputs["loss/eigenvalues"] = eig_loss.detach()
+            batch_outputs["loss/weights"] = weight_loss.detach()
+            batch_outputs["loss/total"] = total_loss.detach()
+            metrics.update(batch_outputs)
+
         if torch.isnan(scaled_loss):
-            print(f"\n[Warning] NaN loss encountered at step {i}. Skipping bad frame...")
+            print(f"\n[Warning] NaN scaled_loss at step {i}. Skipping batch.")
             optimizer.zero_grad(set_to_none=True)
             i += 1
             continue
 
-          
-        # CHANGED: Backward pass on the scaled loss
         scaled_loss.backward()
 
         # ADDED: Only step the optimizer every `accumulation_steps` batches
@@ -487,30 +486,35 @@ def run(args):
     total_steps = (args.max_epochs * args.num_steps) // args.accumulation_steps
 
     import re
-    # ---------------------------------------------------------
-    # PHASE 2 SETUP: Freeze base physics and train only PDOS weights
-    # ---------------------------------------------------------
-    logging.info("Loading Phase 1 Checkpoint...")
-    checkpoint = torch.load("ckpts_good/checkpoint_epoch100.ckpt", map_location=device, weights_only=True)
-    
-    # Load the perfected weights
-    model.load_state_dict(checkpoint["state_dict"])
-    eigenvalue_head.load_state_dict(checkpoint["eigenvalue_head_state"])
-    # We DO NOT load weight_head_state so the new ReLU head initializes from scratch
+    params = []
+    # Split parameters based on the regex
+    for name, param in model.named_parameters():
+        if re.search(r"(.*bias|.*layer_norm.*|.*batch_norm.*)", name):
+            params.append({"params": param, "weight_decay": 0.0})
+        else:
+            params.append({"params": param})
+    params.append({"params": eigenvalue_head.parameters()})
+    params.append({"params": weight_head.parameters()})
 
-    # Freeze the base model and eigenvalue head
-    for param in model.parameters():
-        param.requires_grad = False
-    for param in eigenvalue_head.parameters():
-        param.requires_grad = False
-        
-    # The optimizer will ONLY track the 18 million parameters in the weight_head
-    params = [{"params": weight_head.parameters()}]
     optimizer = torch.optim.Adam(params, lr=args.lr)
-    # ---------------------------------------------------------
+
+    start_epoch = 0
+    if args.resume_from_checkpoint:
+        logging.info(f"Resuming from checkpoint: {args.resume_from_checkpoint}")
+        checkpoint = torch.load(args.resume_from_checkpoint, map_location=device)
+        model.load_state_dict(checkpoint["state_dict"])
+        eigenvalue_head.load_state_dict(checkpoint["eigenvalue_head_state"])
+        weight_head.load_state_dict(checkpoint["weight_head_state"])
+        try:
+            optimizer.load_state_dict(checkpoint["optimizer"])
+        except ValueError as e:
+            logging.warning(f"Could not load optimizer state (might be incompatible): {e}")
+        start_epoch = checkpoint.get("epoch", -1) + 1
+        logging.info(f"Resumed at epoch: {start_epoch}")
 
     div_factor = 10  
     final_div_factor = 10  
+    
     lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
         optimizer,
         max_lr=args.lr * div_factor,
@@ -519,6 +523,13 @@ def run(args):
         div_factor=div_factor,
         final_div_factor=final_div_factor,
     )
+
+    if args.resume_from_checkpoint and "lr_scheduler" in checkpoint:
+        try:
+            lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
+            logging.info("Loaded lr_scheduler state from checkpoint.")
+        except Exception as e:
+            logging.warning(f"Could not load lr_scheduler state: {e}")
     
     wandb_run = None
     if args.wandb:
@@ -567,7 +578,6 @@ def run(args):
     logging.info("Starting training!")
 
     num_steps = args.num_steps
-    start_epoch = 0
 
     for epoch in range(start_epoch, args.max_epochs):
         print(f"Start epoch: {epoch} training...")
@@ -595,7 +605,8 @@ def run(args):
                 "state_dict": model.state_dict(),
                 "eigenvalue_head_state": eigenvalue_head.state_dict(),
                 "weight_head_state": weight_head.state_dict(),
-                "optimizer": optimizer.state_dict()
+                "optimizer": optimizer.state_dict(),
+                "lr_scheduler": lr_scheduler.state_dict()
             }
             
             torch.save(
@@ -626,7 +637,8 @@ def main():
     parser.add_argument("--max_epochs", default=50, type=int)
     parser.add_argument("--save_every_x_epochs", default=5, type=int)
     parser.add_argument("--num_steps", default=100, type=int)
-    parser.add_argument("--checkpoint_path", default=os.path.join(os.getcwd(), "ckpts"), type=str)
+    parser.add_argument("--checkpoint_path", default=os.path.join(os.getcwd(), "ckpts_electronic"), type=str)
+    parser.add_argument("--resume_from_checkpoint", default=None, type=str, help="Path to checkpoint to resume training.")
     parser.add_argument("--lr", default=3e-4, type=float)
     parser.add_argument("--base_model", default="orb_v3_conservative_inf_omat", type=str)
     parser.add_argument("--energy_loss_weight", default=0.0, type=float)
