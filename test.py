@@ -8,8 +8,8 @@ from orb_models.forcefield.pretrained import orb_v3_conservative_omol
 # ==========================================
 # --- EVALUATION CONFIGURATION TOGGLES ---
 # ==========================================
-TEST_MODE = "physics"  # Set to "physics" or "electronic"
-CHECKPOINT_PATH = "ckpts_physics/checkpoint_epoch50.ckpt" # Update to your target checkpoint
+TEST_MODE = "electronic"  # Set to "physics" or "electronic"
+CHECKPOINT_PATH = "ckpts_electronic/checkpoint_epoch100.ckpt" # Update to your target checkpoint
 
 SAVE_PLOTS = True
 EXPORT_CSV = False
@@ -35,6 +35,8 @@ if TEST_MODE == "electronic":
 
     weight_head = nn.Sequential(
         nn.Linear(latent_dim, 1024),
+        nn.SiLU(),
+        nn.Linear(1024, 1024),
         nn.SiLU(),
         nn.Linear(1024, 250),
         nn.Softplus()

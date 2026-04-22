@@ -183,8 +183,12 @@ def finetune(
             # (Using your Peak-Weighted MSE for the sparse PDOS)
             squared_errors = (pred_weights - true_weights) ** 2
             peak_multiplier = 1.0 + (true_weights * 20.0)
-            weight_loss = torch.mean(squared_errors * peak_multiplier)
-            
+            magnitude_loss = torch.mean(squared_errors * peak_multiplier)
+            cos_sim = torch.nn.functional.cosine_similarity(pred_weights, true_weights, dim=-1)
+            shape_loss = torch.mean(1.0 - cos_sim)
+
+            weight_loss = (1.0 * magnitude_loss) + (2.0 * shape_loss)
+
             # 4. Total Loss ONLY cares about the electronic structure
             total_loss = eig_loss + weight_loss
             
@@ -215,7 +219,7 @@ def finetune(
             optimizer.step()
 
             if lr_scheduler is not None:
-                lr_scheduler.step()
+                lr_scheduler.step(scaled_loss.detach())
                 
             # ADDED: Clear gradients after the step is taken
             optimizer.zero_grad(set_to_none=True)
@@ -477,13 +481,14 @@ def run(args):
     weight_head = nn.Sequential(
         nn.Linear(latent_dim, 1024),
         nn.SiLU(),
+        nn.Linear(1024, 1024),
+        nn.SiLU(),
         nn.Linear(1024, 250),
         nn.Softplus()
     ).to(device)
     # ---------------------------------------------------------
 
     model.to(device=device)
-    total_steps = (args.max_epochs * args.num_steps) // args.accumulation_steps
 
     import re
     params = []
@@ -511,19 +516,16 @@ def run(args):
             logging.warning(f"Could not load optimizer state (might be incompatible): {e}")
         start_epoch = checkpoint.get("epoch", -1) + 1
         logging.info(f"Resumed at epoch: {start_epoch}")
-
-    div_factor = 10  
-    final_div_factor = 10  
     
-    lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
-        optimizer,
-        max_lr=args.lr * div_factor,
-        total_steps=total_steps,
-        pct_start=0.05,
-        div_factor=div_factor,
-        final_div_factor=final_div_factor,
-    )
-
+    #lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+    #    optimizer, 
+    #    mode='min', 
+    #    factor=0.5,    # Cut learning rate in half when plateauing
+    #    patience=5,    # Wait 5 epochs of no improvement before dropping
+    #    min_lr=1e-7    # Don't let it go completely to zero
+    #)
+    lr_scheduler = None
+    
     if args.resume_from_checkpoint and "lr_scheduler" in checkpoint:
         try:
             lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
