@@ -187,7 +187,7 @@ def finetune(
             cos_sim = torch.nn.functional.cosine_similarity(pred_weights, true_weights, dim=-1)
             shape_loss = torch.mean(1.0 - cos_sim)
 
-            weight_loss = (1.0 * magnitude_loss) + (2.0 * shape_loss)
+            weight_loss = (3.0 * magnitude_loss) + (0.5 * shape_loss)
 
             # 4. Total Loss ONLY cares about the electronic structure
             total_loss = eig_loss + weight_loss
@@ -525,7 +525,7 @@ def run(args):
     #    min_lr=1e-7    # Don't let it go completely to zero
     #)
     lr_scheduler = None
-    
+
     if args.resume_from_checkpoint and "lr_scheduler" in checkpoint:
         try:
             lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
@@ -608,7 +608,7 @@ def run(args):
                 "eigenvalue_head_state": eigenvalue_head.state_dict(),
                 "weight_head_state": weight_head.state_dict(),
                 "optimizer": optimizer.state_dict(),
-                "lr_scheduler": lr_scheduler.state_dict()
+                #"lr_scheduler": lr_scheduler.state_dict()
             }
             
             torch.save(
