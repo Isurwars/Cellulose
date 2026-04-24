@@ -1,4 +1,17 @@
-"""Finetuning loop with custom loss weights, reference energy control, and custom spectral head."""
+"""
+train_physics.py — Physics (Energy / Forces / Stress) Finetuning
+
+Fine-tunes an Orb GNN backbone on conventional interatomic-potential targets
+(energy, forces, and optionally stress) computed by CASTEP DFT.  Two custom
+MLP heads for eigenvalues and PDOS weights are carried along in the checkpoint
+for compatibility with train_electronic.py, but their outputs are not used in
+the loss here — only the backbone physics heads are trained.
+
+The key difference from train_electronic.py:
+  * Loss: model.loss(batch) drives training (energy + forces + stress).
+  * LR schedule: OneCycleLR gives a warm-up then cosine decay, which is more
+    stable for physics finetuning than a constant or plateau-based schedule.
+"""
 
 import argparse
 import logging
@@ -35,12 +48,21 @@ from orb_models.common.dataset.property_definitions import PropertyDefinition
 import numpy as np
 
 def eigenvalues_row_fn(row, dataset: str):
+    """Extract the 250-band eigenvalue array from an ASE SQLite row.
+
+    Registered as a placeholder at import time so property-config instantiation
+    inside AseSqliteDataset can resolve the 'eigenvalues' name.  Overwritten
+    inside run() with the picklable top-level extract_eigenvalues function.
+    """
     import torch
     val = row.data.get("eigenvalues")
     if val is None:
         raise ValueError(f"No eigenvalues in row {row.id}")
     return torch.from_numpy(np.array(val, dtype=np.float64))
 
+# Pre-register eigenvalues so that any early property-config instantiation
+# (e.g. inside AseSqliteDataset.__init__) can resolve the property name.
+# This entry is overwritten inside run() with the fully picklable version.
 property_definitions.PROPERTIES["eigenvalues"] = PropertyDefinition(
     name="eigenvalues",
     dim=250,
@@ -48,8 +70,21 @@ property_definitions.PROPERTIES["eigenvalues"] = PropertyDefinition(
     row_to_property_fn=eigenvalues_row_fn,
 )
 
-# Define custom scatter_mean for pooling node features to graph features
 def scatter_mean(src: torch.Tensor, index: torch.Tensor, dim: int = 0) -> torch.Tensor:
+    """Segment-mean pooling without requiring torch-scatter.
+
+    Aggregates rows of ``src`` into ``dim_size`` output rows by averaging all
+    source rows that share the same ``index`` value.  Avoids division-by-zero
+    for segments with no contributing nodes via ``clamp(min=1)``.
+
+    Args:
+        src:   Node feature matrix of shape [N, F].
+        index: Integer segment IDs of shape [N], mapping each node to its graph.
+        dim:   Dimension along which to scatter (always 0 for node → graph).
+
+    Returns:
+        Tensor of shape [num_graphs, F] with per-graph mean features.
+    """
     dim_size = int(index.max().item()) + 1
     out = src.new_zeros((dim_size, src.size(1)))
     out.index_add_(dim, index, src)
@@ -87,8 +122,8 @@ def init_wandb_from_config(dataset: str, job_type: str, entity: str) -> Any:
 
 def finetune(
     model: ModelMixin,
-    eigenvalue_head: nn.Module, # CHANGED: Added eigenvalue_head
-    weight_head: nn.Module,     # CHANGED: Added weight_head
+    eigenvalue_head: nn.Module,
+    weight_head: nn.Module,
     optimizer: torch.optim.Optimizer,
     dataloader: DataLoader,
     lr_scheduler: _LRScheduler | None = None,
@@ -99,22 +134,34 @@ def finetune(
     epoch: int = 0,
     accumulation_steps: int = 4,
 ):
-    """Train for a fixed number of steps.
+    """Run one epoch of physics (energy / forces / stress) finetuning.
+
+    Performs gradient-accumulation training using the backbone's built-in
+    ``model.loss`` function.  The custom electronic-structure heads
+    (eigenvalue_head, weight_head) are carried in the function signature so
+    that their gradients are also clipped, keeping all parameter groups in
+    sync — but their outputs are not part of the loss here.
 
     Args:
-        model: The model to optimize.
-        spectral_head: The custom MLP for predicting eigenvalues.
-        optimizer: The optimizer for the model.
-        dataloader: A Pytorch Dataloader, which may be infinite if num_steps is passed.
-        lr_scheduler: Optional, a Learning rate scheduler for modifying the learning rate.
-        num_steps: The number of training steps to take.
-        clip_grad: Optional, the gradient clipping threshold.
-        log_freq: The logging frequency for step metrics.
-        device: The device to use for training.
-        epoch: The number of epochs the model has been fintuned.
+        model: The pretrained Orb GNN backbone (run in train mode).
+        eigenvalue_head: Graph-level MLP head (carried for gradient clipping
+            and checkpoint consistency; not used in the loss here).
+        weight_head: Node-level MLP head (same role as eigenvalue_head).
+        optimizer: Shared optimizer covering backbone + both heads.
+        dataloader: PyTorch DataLoader; may be finite or stepped via num_steps.
+        lr_scheduler: Optional LR scheduler, stepped after each optimizer update.
+            OneCycleLR is the recommended choice for physics finetuning.
+        num_steps: Hard cap on batches consumed per epoch.
+        clip_grad: If set, gradient norms are clipped to this value before each
+            optimizer step for all parameter groups.
+        log_freq: Log aggregated metrics every this many steps.
+        device: Device on which tensors live.
+        epoch: Current epoch index (used to compute the global step for wandb).
+        accumulation_steps: Number of forward passes whose gradients are summed
+            before a single optimizer step (effective batch size multiplier).
 
-    Returns
-        A dictionary of metrics.
+    Returns:
+        A dictionary of scalar metrics averaged over the epoch.
     """
     run: Any | None = wandb.run if WANDB_AVAILABLE else None
 
@@ -161,17 +208,18 @@ def finetune(
         step_metrics["batch_num_edges"] += batch.n_edge.sum()
         step_metrics["batch_num_nodes"] += batch.n_node.sum()
 
-        # Use bfloat16 — the orb model has float32 LayerNorm weights;
-        # float16 autocast feeds fp16 activations into those, causing a
-        # kernel dispatch mismatch. bfloat16 is the model's native autocast dtype.
+        # Autocast is disabled (enabled=False) to avoid precision issues with
+        # the Orb model's float32 LayerNorm weights.  See train_electronic.py
+        # for a full explanation.
         with torch.autocast("cuda", enabled=False):
-            # 1. Native Physics Loss (Handles Energy & Forces internally)
+            # Delegate the full physics loss to the backbone's built-in head.
+            # model.loss computes a weighted combination of energy, force, and
+            # (optionally) stress losses as configured via CLI loss-weight args.
             batch_outputs = model.loss(batch)
-            scaled_loss = batch_outputs.loss / accumulation_steps
+            scaled_loss = batch_outputs.loss / accumulation_steps  # gradient accumulation scale
 
-            # 2. Logging
             metrics.update(batch_outputs.log)
-            
+
         if torch.isnan(scaled_loss):
             print(f"\n[Warning] NaN loss encountered at step {i}. Skipping bad frame...")
             optimizer.zero_grad(set_to_none=True)
@@ -180,19 +228,24 @@ def finetune(
 
         scaled_loss.backward()
 
-        # ADDED: Only step the optimizer every `accumulation_steps` batches
+        # Gradient accumulation: only update weights every `accumulation_steps`
+        # batches (or on the final batch).  This simulates a larger effective
+        # batch size without the memory overhead of a physically larger batch.
         if (i + 1) % accumulation_steps == 0 or (i + 1) == num_training_batches:
             if clip_grad is not None:
+                # Clip all three parameter groups to guard against gradient
+                # spikes that could destabilise the pretrained backbone.
                 torch.nn.utils.clip_grad_norm_(model.parameters(), clip_grad)
-                torch.nn.utils.clip_grad_norm_(eigenvalue_head.parameters(), clip_grad) 
-                torch.nn.utils.clip_grad_norm_(weight_head.parameters(), clip_grad)     
+                torch.nn.utils.clip_grad_norm_(eigenvalue_head.parameters(), clip_grad)
+                torch.nn.utils.clip_grad_norm_(weight_head.parameters(), clip_grad)
 
             optimizer.step()
 
             if lr_scheduler is not None:
                 lr_scheduler.step()
-                
-            # ADDED: Clear gradients after the step is taken
+
+            # Release gradient tensors immediately to free memory for the next
+            # accumulation window (set_to_none is more efficient than zeroing).
             optimizer.zero_grad(set_to_none=True)
 
         metrics.update(step_metrics)
@@ -344,15 +397,17 @@ def load_custom_reference_energies(filepath: str) -> torch.Tensor:
 
     return ref_energies
 
-# ---------------------------------------------------------
-# ADDED: Top-level extraction functions (Picklable for DataLoader)
-# ---------------------------------------------------------
+# These extraction functions must be defined at module top-level (not as
+# lambdas or nested functions) so that Python's multiprocessing 'spawn' mode
+# can pickle them for DataLoader worker processes.
+
 def extract_eigenvalues(row, dataset=None):
+    """Return the 250 CASTEP Kohn-Sham eigenvalues for a structure as float32."""
     return torch.tensor(row.data["eigenvalues"], dtype=torch.float32)
 
 def extract_weights(row, dataset=None):
+    """Return the per-atom 250-band PDOS weight vector for a structure as float32."""
     return torch.tensor(row.data["weights"], dtype=torch.float32)
-# ---------------------------------------------------------
 
 def run(args):
     """Training Loop.
@@ -438,36 +493,41 @@ def run(args):
     model_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     logging.info(f"Base Model has {model_params:,} trainable parameters.")
 
-    # ---------------------------------------------------------
-    # ADDED: Separate Heads for Graph (Eigenvalues) and Nodes (Weights)
-    # ---------------------------------------------------------
-    latent_dim = 256  # Matched to your 0.6.2 omol model
+    # Graph-level head: predicts 250 Kohn-Sham band energies from the
+    # mean-pooled node embedding.  Included here so checkpoints are compatible
+    # with train_electronic.py, which actively trains this head.
+    latent_dim = 256  # Node embedding dimensionality of orb_v3 omol models.
 
     eigenvalue_head = nn.Sequential(
         nn.Linear(latent_dim, 1024),
         nn.SiLU(),
-        nn.Linear(1024, 250)  # 250 bands per graph
+        nn.Linear(1024, 250),   # Output: 250 band energies per structure
     ).to(device)
 
+    # Node-level head: predicts 250 PDOS weights per atom.  Carried for
+    # checkpoint compatibility; not used in the physics loss.
+    # Softplus ensures non-negative outputs (weights are physically positive).
     weight_head = nn.Sequential(
         nn.Linear(latent_dim, 1024),
         nn.SiLU(),
         nn.Linear(1024, 250),
-        nn.Softplus()
+        nn.Softplus(),          # Guarantees weights ≥ 0
     ).to(device)
-    # ---------------------------------------------------------
 
     model.to(device=device)
     total_steps = (args.max_epochs * args.num_steps) // args.accumulation_steps
 
     import re
     params = []
-    # Split parameters based on the regex
+    # Exclude bias, LayerNorm, and BatchNorm parameters from weight decay.
+    # Regularising these normalisation parameters can destabilise training.
     for name, param in model.named_parameters():
         if re.search(r"(.*bias|.*layer_norm.*|.*batch_norm.*)", name):
             params.append({"params": param, "weight_decay": 0.0})
         else:
             params.append({"params": param})
+    # The two custom heads are included in the optimizer so their checkpointed
+    # states remain consistent with train_electronic.py checkpoints.
     params.append({"params": eigenvalue_head.parameters()})
     params.append({"params": weight_head.parameters()})
 
@@ -490,14 +550,20 @@ def run(args):
     past_steps = (start_epoch * args.num_steps) // args.accumulation_steps
     last_step = past_steps - 1 if past_steps > 0 else -1
 
-    div_factor = 10  
-    final_div_factor = 10  
-    
+    # OneCycleLR: starts at lr/div_factor, warms up to max_lr over pct_start
+    # of total steps, then cosine-anneals down to max_lr/final_div_factor.
+    # With div_factor=10 and final_div_factor=10 the range is:
+    #   start = args.lr, peak = args.lr * 10, end = args.lr
+    # This schedule proved more stable for physics finetuning than
+    # ReduceLROnPlateau, which could cut the LR too aggressively.
+    div_factor = 10
+    final_div_factor = 10
+
     lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
         optimizer,
         max_lr=args.lr * div_factor,
         total_steps=total_steps,
-        pct_start=0.05,
+        pct_start=0.05,          # 5 % of steps used for warm-up
         div_factor=div_factor,
         final_div_factor=final_div_factor,
     )
@@ -520,24 +586,25 @@ def run(args):
             )
             wandb.define_metric("step")
             wandb.define_metric("finetune_step/*", step_metric="step")
-    # ---------------------------------------------------------
-    # ADDED: Register Custom CASTEP Properties in the Orb Registry
-    # ---------------------------------------------------------
+    # Register CASTEP electronic-structure properties in the Orb property
+    # registry.  This overwrites the placeholder entry made at import time with
+    # fully picklable top-level functions, which is required for DataLoader
+    # workers launched under the 'spawn' multiprocessing start method.
     PROPERTIES["eigenvalues"] = PropertyDefinition(
         name="eigenvalues",
-        dim=250,          # The 250 energy bands
-        domain="graph",   # Belongs to the entire system
-        row_to_property_fn=extract_eigenvalues
+        dim=250,           # 250 Kohn-Sham band energies per structure
+        domain="graph",    # Graph-level: one vector per crystal structure
+        row_to_property_fn=extract_eigenvalues,
     )
-    
     PROPERTIES["weights"] = PropertyDefinition(
         name="weights",
-        dim=250,          # The 250 PDOS weights per atom
-        domain="node",    # Belongs to each individual atom
-        row_to_property_fn=extract_weights
+        dim=250,           # 250 PDOS weights per atom
+        domain="node",     # Node-level: one vector per atom
+        row_to_property_fn=extract_weights,
     )
-    # ---------------------------------------------------------
-    # Include 'eigenvalues' (graph) and 'weights' (node) in targets
+
+    # Build the target config: eigenvalues are a graph-level target;
+    # forces and PDOS weights are node-level targets.
     graph_targets = ["energy", "stress"] if model.has_stress else ["energy"]
     graph_targets.append("eigenvalues")
     loader_args = dict(
