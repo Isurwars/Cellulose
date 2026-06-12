@@ -1,3 +1,8 @@
+# @file finetune.py
+# @copyright Copyright © 2026 Isaías Rodríguez (isurwars@gmail.com)
+# @par License
+# SPDX-License-Identifier: AGPL-3.0-only
+
 """Finetuning loop with custom loss weights, reference energy control, and custom spectral head."""
 
 import argparse
