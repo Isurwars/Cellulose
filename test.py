@@ -92,8 +92,10 @@ eigenvalue_head = nn.Sequential(
 ).to(device)
 
 weight_head = nn.Sequential(
+    nn.LayerNorm(latent_dim),
     nn.Linear(latent_dim, 1024),
     nn.SiLU(),
+    nn.LayerNorm(1024),
     nn.Linear(1024, 1024),
     nn.SiLU(),
     nn.Linear(1024, 250),
@@ -123,8 +125,23 @@ for ckpt_idx, ckpt_path in enumerate(checkpoint_paths):
         current_eigenvalue_head = old_eigenvalue_head
         current_eigenvalue_head.eval()
         
-    weight_head.load_state_dict(checkpoint["weight_head_state"])
-    weight_head.eval()
+    try:
+        weight_head.load_state_dict(checkpoint["weight_head_state"])
+        current_weight_head = weight_head
+        weight_head.eval()
+    except RuntimeError:
+        print("  [Warning] Detected older checkpoint architecture. Temporarily falling back to old weight head structure.")
+        old_weight_head = nn.Sequential(
+            nn.Linear(latent_dim, 1024),
+            nn.SiLU(),
+            nn.Linear(1024, 1024),
+            nn.SiLU(),
+            nn.Linear(1024, 250),
+            nn.Softplus()
+        ).to(device)
+        old_weight_head.load_state_dict(checkpoint["weight_head_state"])
+        current_weight_head = old_weight_head
+        current_weight_head.eval()
     
     results = {
         "forces_true": [], "forces_pred": [],
@@ -164,7 +181,7 @@ for ckpt_idx, ckpt_path in enumerate(checkpoint_paths):
             graph_feats = node_feats.mean(dim=0, keepdim=True)
             
             pred_eigs = current_eigenvalue_head(graph_feats).cpu().numpy().flatten()
-            pred_weights = weight_head(node_feats).cpu().numpy().flatten()
+            pred_weights = current_weight_head(node_feats).cpu().numpy().flatten()
             
             results["eigs_true"].append(gt["eigenvalues"])
             results["eigs_pred"].append(pred_eigs)

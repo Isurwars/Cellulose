@@ -609,8 +609,10 @@ def run(args):
     # layer gives more capacity for the per-atom spectral decomposition.
     # Softplus ensures non-negative outputs (weights are physically positive).
     weight_head = nn.Sequential(
+        nn.LayerNorm(latent_dim),
         nn.Linear(latent_dim, 1024),
         nn.SiLU(),
+        nn.LayerNorm(1024),
         nn.Linear(1024, 1024),
         nn.SiLU(),
         nn.Linear(1024, 250),

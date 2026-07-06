@@ -4,12 +4,12 @@ uv run python train_electronic.py \
   --base_model orb_v3_direct_omol \
   --custom_reference_energies refs.json \
   --energy_loss_weight 0.01 \
-  --forces_loss_weight 20.0 \
+  --forces_loss_weight 30.0 \
   --stress_loss_weight 0.0 \
-  --eigenvalue_loss_weight 0.05 \
+  --eigenvalue_loss_weight 0.02 \
   --weight_loss_weight 50.0 \
   --scheduler flat_cosine \
-  --unfreeze_epoch 10 \
+  --unfreeze_epoch 3 \
   --backbone_lr 3e-4 \
   --lr 1e-3 \
   --min_lr 1e-5 \
@@ -17,4 +17,4 @@ uv run python train_electronic.py \
   --weight_head_noise_interval 2 \
   --batch_size 1 \
   --num_steps 0 \
-  --max_epochs 51 
+  --max_epochs 41 
