@@ -82,7 +82,11 @@ def get_rmse(true, pred):
 summary_results = []
 # Initialize eigenvalue and weight heads (defined once outside the loop)
 eigenvalue_head = nn.Sequential(
+    nn.LayerNorm(latent_dim),
     nn.Linear(latent_dim, 1024),
+    nn.SiLU(),
+    nn.LayerNorm(1024),
+    nn.Linear(1024, 1024),
     nn.SiLU(),
     nn.Linear(1024, 250)
 ).to(device)
@@ -104,9 +108,22 @@ for ckpt_idx, ckpt_path in enumerate(checkpoint_paths):
     model.load_state_dict(checkpoint["state_dict"])
     model.eval()
     
-    eigenvalue_head.load_state_dict(checkpoint["eigenvalue_head_state"])
+    try:
+        eigenvalue_head.load_state_dict(checkpoint["eigenvalue_head_state"])
+        current_eigenvalue_head = eigenvalue_head
+        eigenvalue_head.eval()
+    except RuntimeError:
+        print("  [Warning] Detected older checkpoint architecture. Temporarily falling back to old eigenvalue head structure.")
+        old_eigenvalue_head = nn.Sequential(
+            nn.Linear(latent_dim, 1024),
+            nn.SiLU(),
+            nn.Linear(1024, 250)
+        ).to(device)
+        old_eigenvalue_head.load_state_dict(checkpoint["eigenvalue_head_state"])
+        current_eigenvalue_head = old_eigenvalue_head
+        current_eigenvalue_head.eval()
+        
     weight_head.load_state_dict(checkpoint["weight_head_state"])
-    eigenvalue_head.eval()
     weight_head.eval()
     
     results = {
@@ -146,7 +163,7 @@ for ckpt_idx, ckpt_path in enumerate(checkpoint_paths):
             node_feats = gnn_out["node_features"]
             graph_feats = node_feats.mean(dim=0, keepdim=True)
             
-            pred_eigs = eigenvalue_head(graph_feats).cpu().numpy().flatten()
+            pred_eigs = current_eigenvalue_head(graph_feats).cpu().numpy().flatten()
             pred_weights = weight_head(node_feats).cpu().numpy().flatten()
             
             results["eigs_true"].append(gt["eigenvalues"])

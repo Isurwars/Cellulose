@@ -217,7 +217,10 @@ def finetune(
         if i % log_freq == 0:
             metrics.reset()
 
-        batch = next(batch_iterator)
+        try:
+            batch = next(batch_iterator)
+        except StopIteration:
+            break
         batch = batch.to(device)
         step_metrics["batch_size"] += len(batch.n_node)
         step_metrics["batch_num_edges"] += batch.n_edge.sum()
@@ -293,7 +296,7 @@ def finetune(
                 true_forces = batch.node_targets["forces"]
                 
                 energy_loss = torch.nn.functional.mse_loss(pred_energy, true_energy)
-                forces_loss = torch.nn.functional.mse_loss(pred_forces, true_forces)
+                forces_loss = torch.nn.functional.huber_loss(pred_forces, true_forces, delta=0.15)
             else:
                 energy_loss = torch.tensor(0.0, device=device)
                 forces_loss = torch.tensor(0.0, device=device)
@@ -593,7 +596,11 @@ def run(args):
     latent_dim = 256  # Node embedding dimensionality of orb_v3 omol models.
 
     eigenvalue_head = nn.Sequential(
+        nn.LayerNorm(latent_dim),
         nn.Linear(latent_dim, 1024),
+        nn.SiLU(),
+        nn.LayerNorm(1024),
+        nn.Linear(1024, 1024),
         nn.SiLU(),
         nn.Linear(1024, 250),   # Output: 250 band energies per structure
     ).to(device)
@@ -674,13 +681,22 @@ def run(args):
                 param.requires_grad = True
     
     # Learning rate scheduler initialization (stepped once per epoch)
+    cosine_start_epoch = None
     if args.scheduler == "cosine":
         logging.info("Initializing CosineAnnealingLR scheduler.")
         lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer, T_max=args.max_epochs, eta_min=args.min_lr
         )
+        cosine_start_epoch = 0
     elif args.scheduler == "flat_cosine":
         logging.info("Initializing Flat-Cosine (SequentialLR) scheduler.")
+        if args.unfreeze_epoch is not None:
+            # If GNN unfreezes, scheduler resets at that epoch.
+            # The final cosine start epoch is unfreeze_epoch + (max_epochs - unfreeze_epoch) // 2
+            cosine_start_epoch = args.unfreeze_epoch + (args.max_epochs - args.unfreeze_epoch) // 2
+        else:
+            cosine_start_epoch = args.max_epochs // 2
+
         T_flat = args.max_epochs // 2
         if T_flat > 0:
             scheduler1 = torch.optim.lr_scheduler.ConstantLR(optimizer, factor=1.0, total_iters=T_flat)
@@ -751,7 +767,7 @@ def run(args):
     )
     logging.info("Starting training!")
 
-    num_steps = args.num_steps
+    num_steps = args.num_steps if args.num_steps > 0 else None
 
     for epoch in range(start_epoch, args.max_epochs):
         # Dynamic unfreezing check
@@ -782,6 +798,7 @@ def run(args):
                 lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
                     optimizer, T_max=args.max_epochs - epoch, eta_min=args.min_lr
                 )
+                cosine_start_epoch = epoch
             elif args.scheduler == "flat_cosine":
                 remaining_epochs = args.max_epochs - epoch
                 logging.info(f"Re-initializing Flat-Cosine scheduler with remaining={remaining_epochs}")
@@ -790,11 +807,20 @@ def run(args):
                     scheduler1 = torch.optim.lr_scheduler.ConstantLR(optimizer, factor=1.0, total_iters=T_flat)
                     scheduler2 = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=remaining_epochs - T_flat, eta_min=args.min_lr)
                     lr_scheduler = torch.optim.lr_scheduler.SequentialLR(optimizer, schedulers=[scheduler1, scheduler2], milestones=[T_flat])
+                    cosine_start_epoch = epoch + T_flat
                 else:
                     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=remaining_epochs, eta_min=args.min_lr)
+                    cosine_start_epoch = epoch
 
         # Apply weight noise perturbation to break false minima
-        if args.weight_head_noise_std > 0 and epoch > 0 and epoch % args.weight_head_noise_interval == 0:
+        # Only inject noise if we haven't reached the cosine scheduler phase
+        is_cosine_phase = cosine_start_epoch is not None and epoch >= cosine_start_epoch
+        if (
+            args.weight_head_noise_std > 0 
+            and epoch > 0 
+            and epoch % args.weight_head_noise_interval == 0
+            and not is_cosine_phase
+        ):
             logging.info(f"Injecting random noise filter (std={args.weight_head_noise_std}) into weight_head parameters to break false minimum.")
             with torch.no_grad():
                 for param in weight_head.parameters():
