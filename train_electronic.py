@@ -679,6 +679,15 @@ def run(args):
         lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer, T_max=args.max_epochs, eta_min=args.min_lr
         )
+    elif args.scheduler == "flat_cosine":
+        logging.info("Initializing Flat-Cosine (SequentialLR) scheduler.")
+        T_flat = args.max_epochs // 2
+        if T_flat > 0:
+            scheduler1 = torch.optim.lr_scheduler.ConstantLR(optimizer, factor=1.0, total_iters=T_flat)
+            scheduler2 = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.max_epochs - T_flat, eta_min=args.min_lr)
+            lr_scheduler = torch.optim.lr_scheduler.SequentialLR(optimizer, schedulers=[scheduler1, scheduler2], milestones=[T_flat])
+        else:
+            lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.max_epochs, eta_min=args.min_lr)
     elif args.scheduler == "plateau":
         logging.info("Initializing ReduceLROnPlateau scheduler (stepped per epoch).")
         lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
@@ -764,17 +773,39 @@ def run(args):
                 else:
                     group["lr"] = args.lr
                     logging.info(f"  Head group {idx} LR reset to: {args.lr}")
+                # Remove cached initial_lr so the new scheduler picks up the updated learning rate
+                group.pop("initial_lr", None)
             
-            # Re-initialize the CosineAnnealingLR scheduler to start decay from this epoch
+            # Re-initialize the scheduler to start decay from this epoch
             if args.scheduler == "cosine":
                 logging.info(f"Re-initializing CosineAnnealingLR scheduler with T_max={args.max_epochs - epoch}")
                 lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
                     optimizer, T_max=args.max_epochs - epoch, eta_min=args.min_lr
                 )
+            elif args.scheduler == "flat_cosine":
+                remaining_epochs = args.max_epochs - epoch
+                logging.info(f"Re-initializing Flat-Cosine scheduler with remaining={remaining_epochs}")
+                T_flat = remaining_epochs // 2
+                if T_flat > 0:
+                    scheduler1 = torch.optim.lr_scheduler.ConstantLR(optimizer, factor=1.0, total_iters=T_flat)
+                    scheduler2 = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=remaining_epochs - T_flat, eta_min=args.min_lr)
+                    lr_scheduler = torch.optim.lr_scheduler.SequentialLR(optimizer, schedulers=[scheduler1, scheduler2], milestones=[T_flat])
+                else:
+                    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=remaining_epochs, eta_min=args.min_lr)
+
+        # Apply weight noise perturbation to break false minima
+        if args.weight_head_noise_std > 0 and epoch > 0 and epoch % args.weight_head_noise_interval == 0:
+            logging.info(f"Injecting random noise filter (std={args.weight_head_noise_std}) into weight_head parameters to break false minimum.")
+            with torch.no_grad():
+                for param in weight_head.parameters():
+                    if param.requires_grad:
+                        noise = torch.randn_like(param) * args.weight_head_noise_std
+                        param.add_(noise)
 
         # Print learning rate at start of epoch
-        current_lrs = [group['lr'] for group in optimizer.param_groups]
-        logging.info(f"Start epoch {epoch} - Learning Rate: {current_lrs}")
+        #current_lrs = [group['lr'] for group in optimizer.param_groups]
+        #logging.info(f"Start epoch {epoch} - Learning Rate: {current_lrs}")
+        
         print(f"Start epoch: {epoch} training...")
         
         epoch_metrics = finetune(
@@ -861,8 +892,10 @@ def main():
     parser.add_argument("--no_freeze_backbone", action="store_false", dest="freeze_backbone", help="Train the GNN backbone parameters (do not freeze).")
     parser.add_argument("--backbone_lr", default=1e-5, type=float, help="Learning rate for GNN backbone.")
     parser.add_argument("--unfreeze_epoch", default=None, type=int, help="Epoch at which to unfreeze the GNN backbone.")
-    parser.add_argument("--scheduler", default="cosine", choices=["none", "cosine", "plateau"], help="Learning rate scheduler to use (stepped once per epoch).")
+    parser.add_argument("--scheduler", default="cosine", choices=["none", "cosine", "flat_cosine", "plateau"], help="Learning rate scheduler to use (stepped once per epoch).")
     parser.add_argument("--min_lr", default=1e-6, type=float, help="Minimum learning rate for the scheduler.")
+    parser.add_argument("--weight_head_noise_std", default=0.0, type=float, help="Standard deviation of noise to inject into weight_head parameters to break false minima.")
+    parser.add_argument("--weight_head_noise_interval", default=5, type=int, help="Epoch interval at which noise is injected into weight_head.")
     parser.add_argument("--eigenvalue_loss_weight", default=0.02, type=float, help="Loss weight scaling factor for eigenvalues.")
     parser.add_argument("--weight_loss_weight", default=1.0, type=float, help="Loss weight scaling factor for PDOS weights.")
 

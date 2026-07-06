@@ -210,7 +210,7 @@ for ckpt_idx, ckpt_path in enumerate(checkpoint_paths):
         ax[2].set_ylabel("ML Predicted (eV/Å)")
         
         plt.tight_layout()
-        plot_path = os.path.join(ckpt_dir, f"cellulose_combined_parity{suffix}.png")
+        plot_path = os.path.join(ckpt_dir, f"cellulose_{suffix}.png")
         os.makedirs(os.path.dirname(plot_path), exist_ok=True)
         plt.savefig(plot_path)
         plt.close(fig)
