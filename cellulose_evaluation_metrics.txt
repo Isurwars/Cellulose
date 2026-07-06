@@ -1,6 +1,0 @@
---- Final MLIP Evaluation Metrics ---
-Energy RMSE: 1.0342 eV
-Forces RMSE: 0.4503 eV/A
-Eigenvalues RMSE: 0.7242 eV
-Weights RMSE: 0.0342 eV
-Baseline Offset Applied: -12989.8736 eV

@@ -6,6 +6,7 @@ dist/
 wheels/
 *.egg-info
 pdos_results/
+ckpts*/
 
 # Generated datasets (too large for GitHub – >100 MB)
 *.db

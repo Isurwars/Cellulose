@@ -134,13 +134,18 @@ def finetune(
     weight_head: nn.Module,
     optimizer: torch.optim.Optimizer,
     dataloader: DataLoader,
-    lr_scheduler: _LRScheduler | None = None,
     num_steps: int | None = None,
     clip_grad: float | None = None,
     log_freq: float = 10,
     device: torch.device = torch.device("cpu"),
     epoch: int = 0,
     accumulation_steps: int = 4,
+    freeze_backbone: bool = True,
+    eigenvalue_loss_weight: float = 1.0,
+    weight_loss_weight: float = 1.0,
+    energy_loss_weight: float = 0.0,
+    forces_loss_weight: float = 0.0,
+    is_conservative_model: bool = False,
 ):
     """Run one epoch of electronic-structure finetuning.
 
@@ -174,8 +179,11 @@ def finetune(
 
     metrics = ScalarMetricTracker()
 
-    # Set the model to "train" mode.
-    model.train()
+    # Set the model to "train" mode (or "eval" if frozen).
+    if freeze_backbone:
+        model.eval()
+    else:
+        model.train()
     eigenvalue_head.train()
     weight_head.train()
 
@@ -221,52 +229,91 @@ def finetune(
         # mismatch.  bfloat16 would be safe, but keeping full float32 avoids any
         # precision loss when fine-tuning the sensitive electronic-structure heads.
         with torch.autocast("cuda", enabled=False):
-            # --- 1. Backbone forward pass ---
-            # Call the raw GNN (model.model) directly to obtain node embeddings
-            # without triggering the built-in physics-loss heads.  The physics
-            # loss is not needed here; we only want the latent features.
+            # --- 2. GNN Backbone forward pass ---
             gnn_out = model.model(batch)
             node_features = gnn_out["node_features"]          # [N_nodes, latent_dim]
-            graph_features = node_features.mean(dim=0, keepdim=True)  # [1, latent_dim]
 
-            # --- 2. Electronic structure predictions ---
+            n_node = batch.n_node  # [num_graphs]
+            graph_idx = torch.repeat_interleave(
+                torch.arange(len(n_node), device=node_features.device), n_node
+            )  # [total_nodes]
+            graph_features = scatter_mean(node_features, graph_idx, dim=0)  # [num_graphs, latent_dim]
+
+            # --- 3. Electronic structure predictions & loss ---
             pred_weights = weight_head(node_features)          # [N_nodes, 250] PDOS weights
-            pred_eigenvalues = eigenvalue_head(graph_features) # [1, 250] band energies
+            pred_eigenvalues = eigenvalue_head(graph_features) # [num_graphs, 250] band energies
 
-            true_eigenvalues = batch.system_targets['eigenvalues']  # [1, 250]
+            true_eigenvalues = batch.system_targets['eigenvalues']  # [num_graphs, 250]
             true_weights = batch.node_targets['weights']            # [N_nodes, 250]
 
-            # --- 3. Loss calculations ---
-            # Band energy MSE — straightforward regression on the 250 eigenvalues.
             eig_loss = torch.nn.functional.mse_loss(pred_eigenvalues, true_eigenvalues)
 
-            # Peak-weighted MSE for PDOS weights.  The PDOS is sparse: most
-            # weights are near zero and only a handful of peaks carry signal.
-            # Multiplying squared errors by (1 + 20 * true_weight) up-weights
-            # the loss on those peaks so they dominate the gradient signal.
+            # Peak-weighted MSE for PDOS weights
             squared_errors = (pred_weights - true_weights) ** 2
             peak_multiplier = 1.0 + (true_weights * 20.0)
             magnitude_loss = torch.mean(squared_errors * peak_multiplier)
 
-            # Cosine-similarity shape loss encourages the predicted PDOS profile
-            # to match the overall spectral shape, independent of scale.
-            cos_sim = torch.nn.functional.cosine_similarity(pred_weights, true_weights, dim=-1)
-            shape_loss = torch.mean(1.0 - cos_sim)
+            # Masked Cramér (L2 Wasserstein) shape loss
+            true_sums = true_weights.sum(dim=-1, keepdim=True)
+            active_mask = (true_sums > 0.1).squeeze(-1)
 
-            # Combined weight loss: magnitude fidelity weighted 3× more than
-            # shape fidelity, empirically chosen to balance the two objectives.
-            weight_loss = (3.0 * magnitude_loss) + (0.5 * shape_loss)
+            if active_mask.any():
+                pred_weights_active = pred_weights[active_mask]
+                true_weights_active = true_weights[active_mask]
 
-            # --- 4. Total loss — electronic structure only ---
-            # The backbone physics heads (energy, forces, stress) are not used;
-            # their loss weights are set to 0.0 via CLI arguments.
-            total_loss = eig_loss + weight_loss
+                pred_pdf = pred_weights_active / (pred_weights_active.sum(dim=-1, keepdim=True) + 1e-8)
+                true_pdf = true_weights_active / (true_weights_active.sum(dim=-1, keepdim=True) + 1e-8)
+                pred_cdf = torch.cumsum(pred_pdf, dim=-1)
+                true_cdf = torch.cumsum(true_pdf, dim=-1)
+
+                cramer_loss = torch.mean((pred_cdf - true_cdf) ** 2)
+            else:
+                cramer_loss = torch.tensor(0.0, device=device)
+
+            weight_loss = (3.0 * magnitude_loss) + (0.5 * cramer_loss)
+
+            # --- 4. Physics predictions & loss (only if GNN is unfrozen) ---
+            is_physics_active = (not freeze_backbone) and (energy_loss_weight > 0.0 or forces_loss_weight > 0.0)
+            
+            if is_physics_active:
+                if is_conservative_model:
+                    with torch.set_grad_enabled(True):
+                        # Set requires_grad on positions to compute forces
+                        batch.positions.requires_grad_(True)
+                        
+                        physics_out = model(batch)
+                        pred_energy = physics_out["energy"]
+                        pred_forces = physics_out["grad_forces"]
+                else:
+                    physics_out = model(batch)
+                    pred_energy = physics_out["energy"]
+                    pred_forces = physics_out["forces"]
+                
+                true_energy = batch.system_targets["energy"]
+                true_forces = batch.node_targets["forces"]
+                
+                energy_loss = torch.nn.functional.mse_loss(pred_energy, true_energy)
+                forces_loss = torch.nn.functional.mse_loss(pred_forces, true_forces)
+            else:
+                energy_loss = torch.tensor(0.0, device=device)
+                forces_loss = torch.tensor(0.0, device=device)
+
+            # --- 5. Total loss ---
+            total_loss = (
+                (energy_loss_weight * energy_loss)
+                + (forces_loss_weight * forces_loss)
+                + (eigenvalue_loss_weight * eig_loss)
+                + (weight_loss_weight * weight_loss)
+            )
             scaled_loss = total_loss / accumulation_steps  # scale for gradient accumulation
 
-            # --- 5. Logging ---
+            # --- 6. Logging ---
             batch_outputs = {}
             batch_outputs["loss/eigenvalues"] = eig_loss.detach()
             batch_outputs["loss/weights"] = weight_loss.detach()
+            if is_physics_active:
+                batch_outputs["loss/energy"] = energy_loss.detach()
+                batch_outputs["loss/forces"] = forces_loss.detach()
             batch_outputs["loss/total"] = total_loss.detach()
             metrics.update(batch_outputs)
 
@@ -290,9 +337,6 @@ def finetune(
                 torch.nn.utils.clip_grad_norm_(weight_head.parameters(), clip_grad)
 
             optimizer.step()
-
-            if lr_scheduler is not None:
-                lr_scheduler.step(scaled_loss.detach())
 
             # Release gradient tensors immediately to free memory for the next
             # accumulation window (set_to_none is more efficient than zeroing).
@@ -489,7 +533,7 @@ def run(args):
         else: 
             loss_weights["stress"] = args.stress_loss_weight
 
-    if args.equigrad_loss_weight is not None:
+    if args.equigrad_loss_weight is not None and args.equigrad_loss_weight > 0.0:
         if not is_conservative_model:
             raise ValueError("Equigrad loss is only available for conservative models.")
         loss_weights["rotational_grad"] = args.equigrad_loss_weight
@@ -566,23 +610,48 @@ def run(args):
         nn.Softplus(),          # Guarantees weights ≥ 0
     ).to(device)
 
+    # Initialize the bias of the final linear layer in the weight head
+    # to a negative value (-4.5). This shifts the initial outputs of the
+    # Softplus function to match the typical scale of target weights (~0.01).
+    # This prevents the initial loss from being huge and completely avoids
+    # the vanishing gradient problem in the flat region of Softplus.
+    nn.init.constant_(weight_head[-2].bias, -4.5)
+
     model.to(device=device)
+
+    # Determine whether backbone parameters should be included in optimizer from epoch 0
+    include_backbone_in_optimizer = (not args.freeze_backbone) or (args.unfreeze_epoch is not None)
+    
+    # Initially freeze GNN parameters if requested (even if unfreeze_epoch is set)
+    if args.freeze_backbone:
+        logging.info("Initially freezing GNN backbone parameters.")
+        for param in model.parameters():
+            param.requires_grad = False
 
     import re
     params = []
     # Exclude bias, LayerNorm, and BatchNorm parameters from weight decay.
     # Regularising these normalisation parameters can destabilise training.
-    for name, param in model.named_parameters():
-        if re.search(r"(.*bias|.*layer_norm.*|.*batch_norm.*)", name):
-            params.append({"params": param, "weight_decay": 0.0})
-        else:
-            params.append({"params": param})
+    if include_backbone_in_optimizer:
+        # Determine initial learning rate for GNN backbone.
+        # If unfreeze_epoch is specified, we start with 0.0 learning rate.
+        init_backbone_lr = 0.0 if (args.freeze_backbone and args.unfreeze_epoch is not None) else args.backbone_lr
+        logging.info(f"Including GNN backbone in optimizer with initial LR: {init_backbone_lr}")
+        
+        for name, param in model.named_parameters():
+            if re.search(r"(.*bias|.*layer_norm.*|.*batch_norm.*)", name):
+                params.append({"params": param, "weight_decay": 0.0, "lr": init_backbone_lr})
+            else:
+                params.append({"params": param, "lr": init_backbone_lr})
+    else:
+        logging.info("Excluding GNN backbone parameters from optimizer parameter list (permanently frozen).")
+
     # The two custom heads are trained from scratch and do not need special
     # weight-decay treatment; they use the global default.
-    params.append({"params": eigenvalue_head.parameters()})
-    params.append({"params": weight_head.parameters()})
+    params.append({"params": eigenvalue_head.parameters(), "lr": args.lr})
+    params.append({"params": weight_head.parameters(), "lr": args.lr})
 
-    optimizer = torch.optim.Adam(params, lr=args.lr)
+    optimizer = torch.optim.Adam(params)
 
     start_epoch = 0
     if args.resume_from_checkpoint:
@@ -597,21 +666,27 @@ def run(args):
             logging.warning(f"Could not load optimizer state (might be incompatible): {e}")
         start_epoch = checkpoint.get("epoch", -1) + 1
         logging.info(f"Resumed at epoch: {start_epoch}")
+        
+        # If resuming at or after unfreeze epoch, ensure GNN parameters have gradients enabled
+        if args.unfreeze_epoch is not None and start_epoch >= args.unfreeze_epoch:
+            logging.info("Resuming after unfreeze epoch. Ensuring GNN backbone parameters are unfrozen.")
+            for param in model.parameters():
+                param.requires_grad = True
     
-    # ReduceLROnPlateau was found to cause training instability: the loss
-    # diverged after ~25 epochs because the scheduler reduced the LR too
-    # aggressively, preventing the optimizer from escaping sharp minima.
-    # A constant LR (scheduler=None) gives a more stable learning curve
-    # for this electronic-structure fine-tuning task.
-    #
-    # lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-    #     optimizer,
-    #     mode='min',
-    #     factor=0.5,   # Halve LR on plateau
-    #     patience=5,   # Wait 5 epochs before reducing
-    #     min_lr=1e-7,  # Floor to avoid effectively freezing the model
-    # )
-    lr_scheduler = None
+    # Learning rate scheduler initialization (stepped once per epoch)
+    if args.scheduler == "cosine":
+        logging.info("Initializing CosineAnnealingLR scheduler.")
+        lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=args.max_epochs, eta_min=args.min_lr
+        )
+    elif args.scheduler == "plateau":
+        logging.info("Initializing ReduceLROnPlateau scheduler (stepped per epoch).")
+        lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, mode='min', factor=0.5, patience=3, min_lr=args.min_lr
+        )
+    else:
+        logging.info("No learning rate scheduler specified (constant learning rate).")
+        lr_scheduler = None
 
     if args.resume_from_checkpoint and "lr_scheduler" in checkpoint:
         try:
@@ -670,20 +745,65 @@ def run(args):
     num_steps = args.num_steps
 
     for epoch in range(start_epoch, args.max_epochs):
+        # Dynamic unfreezing check
+        is_currently_frozen = args.freeze_backbone and (args.unfreeze_epoch is None or epoch < args.unfreeze_epoch)
+        
+        # Ensure requires_grad matches unfreezing state
+        for param in model.parameters():
+            param.requires_grad = not is_currently_frozen
+            
+        # Trigger unfreezing at target epoch
+        if args.unfreeze_epoch is not None and epoch == args.unfreeze_epoch:
+            logging.info(f"--- Unfreezing GNN backbone at epoch {epoch} ---")
+            head_params_set = set(list(eigenvalue_head.parameters()) + list(weight_head.parameters()))
+            for idx, group in enumerate(optimizer.param_groups):
+                is_backbone = any(p not in head_params_set for p in group["params"])
+                if is_backbone:
+                    group["lr"] = args.backbone_lr
+                    logging.info(f"  GNN Backbone group {idx} LR set to: {args.backbone_lr}")
+                else:
+                    group["lr"] = args.lr
+                    logging.info(f"  Head group {idx} LR reset to: {args.lr}")
+            
+            # Re-initialize the CosineAnnealingLR scheduler to start decay from this epoch
+            if args.scheduler == "cosine":
+                logging.info(f"Re-initializing CosineAnnealingLR scheduler with T_max={args.max_epochs - epoch}")
+                lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                    optimizer, T_max=args.max_epochs - epoch, eta_min=args.min_lr
+                )
+
+        # Print learning rate at start of epoch
+        current_lrs = [group['lr'] for group in optimizer.param_groups]
+        logging.info(f"Start epoch {epoch} - Learning Rate: {current_lrs}")
         print(f"Start epoch: {epoch} training...")
-        finetune(
+        
+        epoch_metrics = finetune(
             model=model,
             eigenvalue_head=eigenvalue_head,
             weight_head=weight_head,
             optimizer=optimizer,
             dataloader=train_loader,
-            lr_scheduler=lr_scheduler,
             clip_grad=args.gradient_clip_val,
             device=device,
             num_steps=num_steps,
             epoch=epoch,
             accumulation_steps=args.accumulation_steps,
+            freeze_backbone=is_currently_frozen,
+            eigenvalue_loss_weight=args.eigenvalue_loss_weight,
+            weight_loss_weight=args.weight_loss_weight,
+            energy_loss_weight=args.energy_loss_weight,
+            forces_loss_weight=args.forces_loss_weight,
+            is_conservative_model=is_conservative_model,
         )
+
+        # Step the learning rate scheduler once per epoch
+        if lr_scheduler is not None:
+            if isinstance(lr_scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                lr_scheduler.step(epoch_metrics["loss/total"])
+                logging.info(f"Stepped ReduceLROnPlateau with loss: {epoch_metrics['loss/total']:.4f}")
+            else:
+                lr_scheduler.step()
+                logging.info("Stepped CosineAnnealingLR.")
 
         # Save every X epochs and final epoch
         if (epoch % args.save_every_x_epochs == 0) or (epoch == args.max_epochs - 1):
@@ -696,7 +816,7 @@ def run(args):
                 "eigenvalue_head_state": eigenvalue_head.state_dict(),
                 "weight_head_state": weight_head.state_dict(),
                 "optimizer": optimizer.state_dict(),
-                #"lr_scheduler": lr_scheduler.state_dict()
+                "lr_scheduler": lr_scheduler.state_dict() if lr_scheduler is not None else None
             }
             
             torch.save(
@@ -730,7 +850,7 @@ def main():
     parser.add_argument("--checkpoint_path", default=os.path.join(os.getcwd(), "ckpts_electronic"), type=str)
     parser.add_argument("--resume_from_checkpoint", default=None, type=str, help="Path to checkpoint to resume training.")
     parser.add_argument("--lr", default=3e-4, type=float)
-    parser.add_argument("--base_model", default="orb_v3_conservative_inf_omat", type=str)
+    parser.add_argument("--base_model", default="orb_v3_direct_inf_omat", type=str)
     parser.add_argument("--energy_loss_weight", default=0.0, type=float)
     parser.add_argument("--forces_loss_weight", default=0.0, type=float)
     parser.add_argument("--stress_loss_weight", default=0.0, type=float)
@@ -738,6 +858,13 @@ def main():
     parser.add_argument("--trainable_reference_energies", action="store_true")
     parser.add_argument("--custom_reference_energies", default=None, type=str)
     parser.add_argument("--accumulation_steps", default=4, type=int, help="Number of batches to accumulate gradients")
+    parser.add_argument("--no_freeze_backbone", action="store_false", dest="freeze_backbone", help="Train the GNN backbone parameters (do not freeze).")
+    parser.add_argument("--backbone_lr", default=1e-5, type=float, help="Learning rate for GNN backbone.")
+    parser.add_argument("--unfreeze_epoch", default=None, type=int, help="Epoch at which to unfreeze the GNN backbone.")
+    parser.add_argument("--scheduler", default="cosine", choices=["none", "cosine", "plateau"], help="Learning rate scheduler to use (stepped once per epoch).")
+    parser.add_argument("--min_lr", default=1e-6, type=float, help="Minimum learning rate for the scheduler.")
+    parser.add_argument("--eigenvalue_loss_weight", default=0.02, type=float, help="Loss weight scaling factor for eigenvalues.")
+    parser.add_argument("--weight_loss_weight", default=1.0, type=float, help="Loss weight scaling factor for PDOS weights.")
 
     args = parser.parse_args()
     run(args)
