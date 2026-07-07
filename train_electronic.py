@@ -269,8 +269,15 @@ def compute_electronic_losses(
     pred_weights: torch.Tensor,
     true_weights: torch.Tensor,
     device: torch.device,
+    *,
+    eig_loss_type: str = "mse",
+    huber_delta: float = 1.0,
+    peak_boost: float = 20.0,
+    active_threshold: float = 0.1,
+    magnitude_weight: float = 3.0,
+    cramer_weight: float = 0.5,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Compute eigenvalue MSE and peak-weighted PDOS weight loss.
+    """Compute eigenvalue loss and peak-weighted PDOS weight loss.
 
     The weight loss is a combination of:
       * **Magnitude loss** — peak-weighted MSE that emphasises spectral peaks.
@@ -283,20 +290,36 @@ def compute_electronic_losses(
         pred_weights: Predicted PDOS weights, shape [N_nodes, 250].
         true_weights: Ground-truth PDOS weights, shape [N_nodes, 250].
         device: Device for zero-tensors when no active atoms exist.
+        eig_loss_type: Loss function for eigenvalues — ``"mse"`` or ``"huber"``.
+            Huber (smooth L1) is more robust to outlier eigenvalues.
+        huber_delta: Transition point for Huber loss (only used when
+            ``eig_loss_type="huber"``).
+        peak_boost: Multiplier for peak-weighting in PDOS magnitude loss.
+            Higher values penalise errors at spectral peaks more heavily.
+        active_threshold: Minimum sum of true weights for an atom to be
+            included in the Cramér shape loss.
+        magnitude_weight: Blend coefficient for the magnitude component.
+        cramer_weight: Blend coefficient for the Cramér shape component.
 
     Returns:
         (eig_loss, weight_loss) — both scalar tensors on *device*.
     """
-    eig_loss = torch.nn.functional.mse_loss(pred_eigenvalues, true_eigenvalues)
+    # Eigenvalue loss
+    if eig_loss_type == "huber":
+        eig_loss = torch.nn.functional.huber_loss(
+            pred_eigenvalues, true_eigenvalues, delta=huber_delta
+        )
+    else:
+        eig_loss = torch.nn.functional.mse_loss(pred_eigenvalues, true_eigenvalues)
 
     # Peak-weighted MSE for PDOS weights
     squared_errors = (pred_weights - true_weights) ** 2
-    peak_multiplier = 1.0 + (true_weights * 20.0)
+    peak_multiplier = 1.0 + (true_weights * peak_boost)
     magnitude_loss = torch.mean(squared_errors * peak_multiplier)
 
     # Masked Cramér (L2 Wasserstein) shape loss
     true_sums = true_weights.sum(dim=-1, keepdim=True)
-    active_mask = (true_sums > 0.1).squeeze(-1)
+    active_mask = (true_sums > active_threshold).squeeze(-1)
 
     if active_mask.any():
         pred_weights_active = pred_weights[active_mask]
@@ -311,7 +334,7 @@ def compute_electronic_losses(
     else:
         cramer_loss = torch.tensor(0.0, device=device)
 
-    weight_loss = (3.0 * magnitude_loss) + (0.5 * cramer_loss)
+    weight_loss = (magnitude_weight * magnitude_loss) + (cramer_weight * cramer_loss)
 
     return eig_loss, weight_loss
 
@@ -321,54 +344,112 @@ def compute_electronic_losses(
 # ---------------------------------------------------------------------------
 
 
+class ResidualBlock(nn.Module):
+    """Pre-norm residual MLP block: ``x + Dropout(SiLU(Linear(LayerNorm(x))))``.
+
+    Adds a skip connection around a single hidden layer, improving gradient
+    flow through deeper head networks at zero inference cost.
+    """
+
+    def __init__(self, dim: int, dropout: float = 0.0) -> None:
+        super().__init__()
+        self.block = nn.Sequential(
+            nn.LayerNorm(dim),
+            nn.Linear(dim, dim),
+            nn.SiLU(),
+            nn.Dropout(dropout),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return x + self.block(x)
+
+
+class AttentionPool(nn.Module):
+    """Learned attention-weighted graph pooling.
+
+    Replaces uniform ``scatter_mean`` with a per-node importance gate so the
+    model can learn which atoms contribute most to graph-level properties
+    (e.g. H atoms in cellulose likely matter less for band structure than C/O).
+
+    The gate is a sigmoid-activated linear projection that produces a scalar
+    weight per node, which is multiplied element-wise with the node features
+    before segment-mean pooling.
+    """
+
+    def __init__(self, dim: int) -> None:
+        super().__init__()
+        self.gate = nn.Sequential(nn.Linear(dim, 1), nn.Sigmoid())
+
+    def forward(self, x: torch.Tensor, graph_idx: torch.Tensor) -> torch.Tensor:
+        """Attention-pool node features into graph features.
+
+        Args:
+            x: Node feature matrix, shape ``[N_nodes, dim]``.
+            graph_idx: Per-node graph membership, shape ``[N_nodes]``.
+
+        Returns:
+            Graph features, shape ``[num_graphs, dim]``.
+        """
+        weights = self.gate(x)  # [N_nodes, 1]
+        return scatter_mean(x * weights, graph_idx, dim=0)
+
+
 def build_heads(
     latent_dim: int,
     device: torch.device,
-) -> tuple[nn.Module, nn.Module]:
-    """Construct the eigenvalue and PDOS-weight prediction heads.
+    dropout: float = 0.0,
+    couple_heads: bool = False,
+) -> tuple[nn.Module, nn.Module, AttentionPool]:
+    """Construct the eigenvalue head, PDOS-weight head, and attention pooling.
 
     Args:
         latent_dim: Dimensionality of the GNN node embeddings.
         device: Device to place the modules on.
+        dropout: Dropout probability applied after each SiLU activation
+            in the heads (0.0 = no dropout).
+        couple_heads: Whether to feed eigenvalues as additional features
+            to the weight head.
 
     Returns:
-        ``(eigenvalue_head, weight_head)`` — both already on *device*.
+        ``(eigenvalue_head, weight_head, attention_pool)`` — all on *device*.
     """
+    hidden_dim = 1024
+    weight_in_dim = latent_dim + NUM_BANDS if couple_heads else latent_dim
+
     # Graph-level head: predicts 250 Kohn-Sham band energies from the
-    # mean-pooled node embedding.  A single hidden layer is sufficient because
-    # the eigenvalue spectrum is a smooth, ordered quantity.
+    # attention-pooled node embedding.  A residual block in the hidden layer
+    # improves gradient flow without adding inference cost.
     eigenvalue_head = nn.Sequential(
         nn.LayerNorm(latent_dim),
-        nn.Linear(latent_dim, 1024),
+        nn.Linear(latent_dim, hidden_dim),
         nn.SiLU(),
-        nn.LayerNorm(1024),
-        nn.Linear(1024, 1024),
-        nn.SiLU(),
-        nn.Linear(1024, NUM_BANDS),  # Output: 250 band energies per structure
+        nn.Dropout(dropout),
+        ResidualBlock(hidden_dim, dropout),
+        nn.Linear(hidden_dim, NUM_BANDS),
     ).to(device)
 
-    # Node-level head: predicts 250 PDOS weights per atom.  An extra hidden
-    # layer gives more capacity for the per-atom spectral decomposition.
-    # Softplus ensures non-negative outputs (weights are physically positive).
+    # Node-level head: predicts 250 PDOS weights per atom.  Sigmoid ensures
+    # outputs in [0, 1].  A residual block gives capacity for the per-atom
+    # spectral decomposition.
     weight_head = nn.Sequential(
-        nn.LayerNorm(latent_dim),
-        nn.Linear(latent_dim, 1024),
+        nn.LayerNorm(weight_in_dim),
+        nn.Linear(weight_in_dim, hidden_dim),
         nn.SiLU(),
-        nn.LayerNorm(1024),
-        nn.Linear(1024, 1024),
-        nn.SiLU(),
-        nn.Linear(1024, NUM_BANDS),
-        nn.Sigmoid(),  # Guarantees weights ≥ 0
+        nn.Dropout(dropout),
+        ResidualBlock(hidden_dim, dropout),
+        nn.Linear(hidden_dim, NUM_BANDS),
+        nn.Sigmoid(),
     ).to(device)
 
     # Initialize the bias of the final linear layer in the weight head
-    # to a negative value (-4.5). This shifts the initial outputs of the
-    # Softplus function to match the typical scale of target weights (~0.01).
-    # This prevents the initial loss from being huge and completely avoids
-    # the vanishing gradient problem in the flat region of Softplus.
+    # to a negative value (-4.5).  Sigmoid(-4.5) ≈ 0.011, matching the
+    # typical scale of target weights and avoiding initial loss explosions.
     nn.init.constant_(weight_head[-2].bias, -4.5)
 
-    return eigenvalue_head, weight_head
+    # Learned attention pooling for graph-level predictions
+    attention_pool = AttentionPool(latent_dim).to(device)
+
+    return eigenvalue_head, weight_head, attention_pool
 
 
 # ---------------------------------------------------------------------------
@@ -553,6 +634,7 @@ def build_optimizer(
     model: ModelMixin,
     eigenvalue_head: nn.Module,
     weight_head: nn.Module,
+    attention_pool: AttentionPool,
     args: argparse.Namespace,
 ) -> torch.optim.Optimizer:
     """Build the Adam optimizer with per-group learning rates.
@@ -566,6 +648,7 @@ def build_optimizer(
         model: The pretrained Orb GNN backbone.
         eigenvalue_head: Eigenvalue prediction head.
         weight_head: PDOS weight prediction head.
+        attention_pool: Learned attention pooling module.
         args: Parsed command-line arguments.
 
     Returns:
@@ -591,10 +674,11 @@ def build_optimizer(
     else:
         logging.info("Excluding GNN backbone parameters from optimizer (permanently frozen).")
 
-    # The two custom heads are trained from scratch and do not need special
-    # weight-decay treatment; they use the global default.
+    # The custom heads and attention pool are trained from scratch and do not
+    # need special weight-decay treatment; they use the global default.
     params.append({"params": eigenvalue_head.parameters(), "lr": args.lr})
     params.append({"params": weight_head.parameters(), "lr": args.lr})
+    params.append({"params": attention_pool.parameters(), "lr": args.lr})
 
     return torch.optim.Adam(params)
 
@@ -680,6 +764,7 @@ def save_checkpoint(
     model: ModelMixin,
     eigenvalue_head: nn.Module,
     weight_head: nn.Module,
+    attention_pool: AttentionPool,
     optimizer: torch.optim.Optimizer,
     lr_scheduler: Any | None,
     config: dict[str, Any] | None = None,
@@ -693,6 +778,7 @@ def save_checkpoint(
         model: The GNN backbone.
         eigenvalue_head: Eigenvalue prediction head.
         weight_head: PDOS weight prediction head.
+        attention_pool: Learned attention pooling module.
         optimizer: Optimizer (state is saved for resumption).
         lr_scheduler: LR scheduler (state saved if not ``None``).
         config: Training configuration dict (saved for reproducibility).
@@ -704,6 +790,7 @@ def save_checkpoint(
         "state_dict": model.state_dict(),
         "eigenvalue_head_state": eigenvalue_head.state_dict(),
         "weight_head_state": weight_head.state_dict(),
+        "attention_pool_state": attention_pool.state_dict(),
         "optimizer": optimizer.state_dict(),
         "lr_scheduler": lr_scheduler.state_dict() if lr_scheduler is not None else None,
         "config": config,
@@ -718,18 +805,20 @@ def resume_checkpoint(
     model: ModelMixin,
     eigenvalue_head: nn.Module,
     weight_head: nn.Module,
+    attention_pool: AttentionPool,
     optimizer: torch.optim.Optimizer,
     lr_scheduler: Any | None,
     device: torch.device,
     unfreeze_epoch: int | None,
 ) -> int:
-    """Restore model, heads, optimizer, and scheduler from a checkpoint.
+    """Restore model, heads, attention pool, optimizer, and scheduler from a checkpoint.
 
     Args:
         checkpoint_path: Path to the ``.ckpt`` file.
         model: The GNN backbone (modified in-place).
         eigenvalue_head: Eigenvalue head (modified in-place).
         weight_head: Weight head (modified in-place).
+        attention_pool: Attention pooling module (modified in-place).
         optimizer: Optimizer (state loaded in-place).
         lr_scheduler: LR scheduler (state loaded if present in checkpoint).
         device: Device to map tensors onto.
@@ -744,6 +833,12 @@ def resume_checkpoint(
     model.load_state_dict(checkpoint["state_dict"])
     eigenvalue_head.load_state_dict(checkpoint["eigenvalue_head_state"])
     weight_head.load_state_dict(checkpoint["weight_head_state"])
+
+    # Attention pool state may be absent in older checkpoints
+    if "attention_pool_state" in checkpoint:
+        attention_pool.load_state_dict(checkpoint["attention_pool_state"])
+    else:
+        logging.warning("No attention_pool_state in checkpoint (old format); using fresh init.")
 
     try:
         optimizer.load_state_dict(checkpoint["optimizer"])
@@ -779,6 +874,7 @@ def finetune(
     model: ModelMixin,
     eigenvalue_head: nn.Module,
     weight_head: nn.Module,
+    attention_pool: AttentionPool,
     optimizer: torch.optim.Optimizer,
     dataloader: DataLoader,
     num_steps: int | None = None,
@@ -793,37 +889,52 @@ def finetune(
     energy_loss_weight: float = 0.0,
     forces_loss_weight: float = 0.0,
     is_conservative_model: bool = False,
+    *,
+    eig_loss_type: str = "mse",
+    huber_delta: float = 1.0,
+    pdos_peak_boost: float = 20.0,
+    pdos_active_threshold: float = 0.1,
+    pdos_magnitude_weight: float = 3.0,
+    pdos_cramer_weight: float = 0.5,
+    couple_heads: bool = False,
+    detach_coupling: bool = False,
 ) -> dict[str, float]:
     """Run one epoch of electronic-structure finetuning.
 
     Performs gradient-accumulation training over the dataloader.  The physics
     loss (energy/forces) is deliberately ignored unless explicitly weighted;
-    only the eigenvalue MSE and the peak-weighted PDOS weight loss are
+    only the eigenvalue loss and the peak-weighted PDOS weight loss are
     back-propagated by default.
 
     Args:
         model: The pretrained Orb GNN backbone (run in train mode).
-        eigenvalue_head: MLP that maps mean-pooled node features to 250 band
+        eigenvalue_head: MLP that maps pooled node features to 250 band
             energies (graph-level target).
         weight_head: MLP that maps per-node features to 250 PDOS weights
-            (node-level target, Softplus output).
-        optimizer: Shared optimizer covering backbone + both heads.
+            (node-level target, Sigmoid output).
+        attention_pool: Learned attention pooling module.
+        optimizer: Shared optimizer covering backbone + heads + attention pool.
         dataloader: PyTorch DataLoader; may be finite or stepped via num_steps.
-        num_steps: Hard cap on batches consumed per epoch (useful for large
-            datasets where one full pass is prohibitively long).
+        num_steps: Hard cap on batches consumed per epoch.
         clip_grad: If set, gradient norms for all parameter groups are clipped
             to this value before each optimizer step.
         log_freq: Log aggregated metrics every this many steps.
         device: Device on which tensors live.
         epoch: Current epoch index (used to compute the global step for wandb).
         accumulation_steps: Number of forward passes whose gradients are summed
-            before a single optimizer step (effective batch size multiplier).
+            before a single optimizer step.
         freeze_backbone: Whether the GNN backbone is frozen this epoch.
-        eigenvalue_loss_weight: Scaling factor for eigenvalue MSE loss.
+        eigenvalue_loss_weight: Scaling factor for eigenvalue loss.
         weight_loss_weight: Scaling factor for PDOS weight loss.
         energy_loss_weight: Scaling factor for energy MSE loss.
         forces_loss_weight: Scaling factor for forces MSE loss.
         is_conservative_model: Whether the model uses conservative force computation.
+        eig_loss_type: Loss type for eigenvalues ('mse' or 'huber').
+        huber_delta: Transition point for Huber loss.
+        pdos_peak_boost: PDOS peak boost factor.
+        pdos_active_threshold: Minimum active sum for Cramér shape loss.
+        pdos_magnitude_weight: Weight of magnitude loss.
+        pdos_cramer_weight: Weight of Cramér shape loss.
 
     Returns:
         A dictionary of scalar metrics averaged over the epoch.
@@ -838,6 +949,7 @@ def finetune(
         model.train()
     eigenvalue_head.train()
     weight_head.train()
+    attention_pool.train()
 
     # Resolve total number of training batches
     num_training_batches: int | float
@@ -878,11 +990,21 @@ def finetune(
             node_features = gnn_out["node_features"]  # [N_nodes, latent_dim]
 
             graph_idx = build_graph_index(batch.n_node, node_features.device)
-            graph_features = scatter_mean(node_features, graph_idx, dim=0)
+            # Use AttentionPool for pooling node features to graph features
+            graph_features = attention_pool(node_features, graph_idx)
 
             # --- Electronic structure predictions & loss ---
-            pred_weights = weight_head(node_features)          # [N_nodes, 250]
             pred_eigenvalues = eigenvalue_head(graph_features)  # [num_graphs, 250]
+
+            if couple_heads:
+                node_eigenvalues = pred_eigenvalues[graph_idx]  # [N_nodes, 250]
+                if detach_coupling:
+                    node_eigenvalues = node_eigenvalues.detach()
+                weight_head_input = torch.cat([node_features, node_eigenvalues], dim=-1)
+            else:
+                weight_head_input = node_features
+
+            pred_weights = weight_head(weight_head_input)          # [N_nodes, 250]
 
             true_eigenvalues = batch.system_targets["eigenvalues"]
             true_weights = batch.node_targets["weights"]
@@ -891,6 +1013,12 @@ def finetune(
                 pred_eigenvalues, true_eigenvalues,
                 pred_weights, true_weights,
                 device,
+                eig_loss_type=eig_loss_type,
+                huber_delta=huber_delta,
+                peak_boost=pdos_peak_boost,
+                active_threshold=pdos_active_threshold,
+                magnitude_weight=pdos_magnitude_weight,
+                cramer_weight=pdos_cramer_weight,
             )
 
             # --- Physics predictions & loss (only if GNN is unfrozen) ---
@@ -951,16 +1079,18 @@ def finetune(
         # batch size without the memory overhead of a physically larger batch.
         if (i + 1) % accumulation_steps == 0 or (i + 1) == num_training_batches:
             if clip_grad is not None:
-                # Clip gradients for all three parameter groups independently
+                # Clip gradients for all parameter groups independently
                 # to prevent instability when the heads first start training.
                 # clip_grad_norm_ returns the pre-clip total norm for diagnostics.
                 backbone_gnorm = torch.nn.utils.clip_grad_norm_(model.parameters(), clip_grad)
                 eig_head_gnorm = torch.nn.utils.clip_grad_norm_(eigenvalue_head.parameters(), clip_grad)
                 w_head_gnorm = torch.nn.utils.clip_grad_norm_(weight_head.parameters(), clip_grad)
+                attn_pool_gnorm = torch.nn.utils.clip_grad_norm_(attention_pool.parameters(), clip_grad)
                 metrics.update({
                     "grad_norm/backbone": backbone_gnorm.detach(),
                     "grad_norm/eigenvalue_head": eig_head_gnorm.detach(),
                     "grad_norm/weight_head": w_head_gnorm.detach(),
+                    "grad_norm/attention_pool": attn_pool_gnorm.detach(),
                 })
 
             optimizer.step()
@@ -992,12 +1122,14 @@ def evaluate_model(
     model: ModelMixin,
     eigenvalue_head: nn.Module,
     weight_head: nn.Module,
+    attention_pool: AttentionPool,
     atoms_adapter: AbstractAtomsAdapter,
     eval_frames: list[tuple[Any, dict[str, Any]]],
     device: torch.device,
     is_conservative_model: bool = False,
     plot_path: str | None = None,
     fast_eval: bool = False,
+    couple_heads: bool = False,
 ) -> dict[str, float]:
     """Evaluate current model checkpoint on cached validation frames.
 
@@ -1005,6 +1137,7 @@ def evaluate_model(
         model: The GNN backbone (set to eval mode internally).
         eigenvalue_head: Eigenvalue prediction head.
         weight_head: PDOS weight prediction head.
+        attention_pool: Attention pooling module.
         atoms_adapter: Adapter for batching single graphs.
         eval_frames: Pre-cached ``(graph, ground_truth)`` pairs from
             :func:`cache_eval_frames`.
@@ -1021,6 +1154,7 @@ def evaluate_model(
     model.eval()
     eigenvalue_head.eval()
     weight_head.eval()
+    attention_pool.eval()
 
     results: dict[str, list[Any]] = {
         "forces_true": [], "forces_pred": [],
@@ -1058,13 +1192,19 @@ def evaluate_model(
             gnn_out = model.model(inputs)
             node_feats = gnn_out["node_features"]
 
-            # Use scatter_mean for consistency with training, even for single-
-            # graph batches.  This ensures identical pooling behaviour.
+            # Use AttentionPool for consistency with training
             graph_idx = build_graph_index(inputs.n_node, node_feats.device)
-            graph_feats = scatter_mean(node_feats, graph_idx, dim=0)
+            graph_feats = attention_pool(node_feats, graph_idx)
 
-            pred_eigs = eigenvalue_head(graph_feats).cpu().numpy().flatten()
-            pred_weights = weight_head(node_feats).cpu().numpy().flatten()
+            pred_eigs_tensor = eigenvalue_head(graph_feats)
+            if couple_heads:
+                node_eigenvalues = pred_eigs_tensor[graph_idx]  # [N_nodes, 250]
+                weight_head_input = torch.cat([node_feats, node_eigenvalues], dim=-1)
+            else:
+                weight_head_input = node_feats
+
+            pred_eigs = pred_eigs_tensor.cpu().numpy().flatten()
+            pred_weights = weight_head(weight_head_input).cpu().numpy().flatten()
 
             results["eigs_true"].append(gt["eigenvalues"])
             results["eigs_pred"].append(pred_eigs)
@@ -1214,7 +1354,9 @@ def run(args: argparse.Namespace) -> None:
     logging.info(f"Base Model has {model_params:,} trainable parameters.")
 
     # --- Heads ---
-    eigenvalue_head, weight_head = build_heads(LATENT_DIM, device)
+    eigenvalue_head, weight_head, attention_pool = build_heads(
+        LATENT_DIM, device, dropout=args.dropout, couple_heads=args.couple_heads
+    )
     model.to(device=device)
 
     # --- Freeze backbone if requested ---
@@ -1224,7 +1366,7 @@ def run(args: argparse.Namespace) -> None:
             param.requires_grad = False
 
     # --- Optimizer ---
-    optimizer = build_optimizer(model, eigenvalue_head, weight_head, args)
+    optimizer = build_optimizer(model, eigenvalue_head, weight_head, attention_pool, args)
 
     # --- Scheduler ---
     lr_scheduler, cosine_start_epoch = build_scheduler(
@@ -1238,7 +1380,7 @@ def run(args: argparse.Namespace) -> None:
     if args.resume_from_checkpoint:
         start_epoch = resume_checkpoint(
             args.resume_from_checkpoint,
-            model, eigenvalue_head, weight_head,
+            model, eigenvalue_head, weight_head, attention_pool,
             optimizer, lr_scheduler, device,
             unfreeze_epoch=args.unfreeze_epoch,
         )
@@ -1306,7 +1448,7 @@ def run(args: argparse.Namespace) -> None:
         if args.unfreeze_epoch is not None and epoch == args.unfreeze_epoch:
             logging.info(f"--- Unfreezing GNN backbone at epoch {epoch} ---")
             head_params_set = set(
-                list(eigenvalue_head.parameters()) + list(weight_head.parameters())
+                list(eigenvalue_head.parameters()) + list(weight_head.parameters()) + list(attention_pool.parameters())
             )
             for idx, group in enumerate(optimizer.param_groups):
                 is_backbone = any(p not in head_params_set for p in group["params"])
@@ -1355,6 +1497,7 @@ def run(args: argparse.Namespace) -> None:
             model=model,
             eigenvalue_head=eigenvalue_head,
             weight_head=weight_head,
+            attention_pool=attention_pool,
             optimizer=optimizer,
             dataloader=train_loader,
             clip_grad=args.gradient_clip_val,
@@ -1368,6 +1511,14 @@ def run(args: argparse.Namespace) -> None:
             energy_loss_weight=args.energy_loss_weight,
             forces_loss_weight=args.forces_loss_weight,
             is_conservative_model=is_conservative_model,
+            eig_loss_type=args.eig_loss_type,
+            huber_delta=args.huber_delta,
+            pdos_peak_boost=args.pdos_peak_boost,
+            pdos_active_threshold=args.pdos_active_threshold,
+            pdos_magnitude_weight=args.pdos_magnitude_weight,
+            pdos_cramer_weight=args.pdos_cramer_weight,
+            couple_heads=args.couple_heads,
+            detach_coupling=args.detach_coupling,
         )
 
         # Step the learning rate scheduler once per epoch
@@ -1394,12 +1545,14 @@ def run(args: argparse.Namespace) -> None:
                 model=model,
                 eigenvalue_head=eigenvalue_head,
                 weight_head=weight_head,
+                attention_pool=attention_pool,
                 atoms_adapter=atoms_adapter,
                 eval_frames=eval_frames,
                 device=device,
                 is_conservative_model=is_conservative_model,
                 plot_path=plot_path,
                 fast_eval=not is_ckpt_epoch,
+                couple_heads=args.couple_heads,
             )
             logging.info("=" * 60)
             logging.info(f"Epoch {epoch} Evaluation Metrics:")
@@ -1432,7 +1585,7 @@ def run(args: argparse.Namespace) -> None:
                 best_composite_metric = composite_metric
                 save_checkpoint(
                     args.checkpoint_path, epoch,
-                    model, eigenvalue_head, weight_head,
+                    model, eigenvalue_head, weight_head, attention_pool,
                     optimizer, lr_scheduler,
                     config=config_dict, filename="best_model.ckpt",
                 )
@@ -1451,7 +1604,7 @@ def run(args: argparse.Namespace) -> None:
         if is_ckpt_epoch:
             save_checkpoint(
                 args.checkpoint_path, epoch,
-                model, eigenvalue_head, weight_head,
+                model, eigenvalue_head, weight_head, attention_pool,
                 optimizer, lr_scheduler,
                 config=config_dict,
             )
@@ -1505,6 +1658,15 @@ def main() -> None:
     parser.add_argument("--weight_loss_weight", default=1.0, type=float, help="Loss weight scaling factor for PDOS weights.")
     parser.add_argument("--eval_every_x_epochs", default=1, type=int, help="Frequency of running evaluation on cached database frames. Set to 0 to disable.")
     parser.add_argument("--val_fraction", default=0.1, type=float, help="Fraction of data to hold out for validation (0.0 = train on all, evaluate on all).")
+    parser.add_argument("--dropout", default=0.1, type=float, help="Dropout rate in the heads (0.0 to disable).")
+    parser.add_argument("--eig_loss_type", default="mse", choices=["mse", "huber"], help="Loss type for eigenvalues ('mse' or 'huber').")
+    parser.add_argument("--huber_delta", default=1.0, type=float, help="Delta threshold for Huber loss.")
+    parser.add_argument("--pdos_peak_boost", default=20.0, type=float, help="PDOS peak boost factor inside loss.")
+    parser.add_argument("--pdos_active_threshold", default=0.1, type=float, help="Threshold for active nodes in Cramér shape loss.")
+    parser.add_argument("--pdos_magnitude_weight", default=3.0, type=float, help="Magnitude component weight in PDOS loss.")
+    parser.add_argument("--pdos_cramer_weight", default=0.5, type=float, help="Cramér shape component weight in PDOS loss.")
+    parser.add_argument("--no_couple_heads", action="store_false", dest="couple_heads", help="Do not couple the eigenvalue head to the weight head.")
+    parser.add_argument("--detach_coupling", action="store_true", help="Detach the predicted eigenvalues before feeding them to the weight head to prevent weight gradients from flowing back to the eigenvalue head.")
 
     args, _ = parser.parse_known_args()
     run(args)
