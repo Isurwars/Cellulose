@@ -5,9 +5,9 @@ uv run python train_electronic.py \
   --custom_reference_energies refs.json \
   --energy_loss_weight 0.0 \
   --stress_loss_weight 0.0 \
-  --forces_loss_weight 2.0 \
+  --forces_loss_weight 1.0 \
   --eigenvalue_loss_weight 0.02 \
-  --weight_loss_weight 20.0 \
+  --weight_loss_weight 2.0 \
   --scheduler flat_cosine \
   --unfreeze_epoch 3 \
   --backbone_lr 1e-3 \
