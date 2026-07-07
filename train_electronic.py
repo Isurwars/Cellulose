@@ -14,6 +14,8 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+from collections import Counter
+from datetime import datetime
 from typing import Any
 
 import ase.db
@@ -46,7 +48,36 @@ from trainer import (
     evaluate_model,
 )
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
+
+
+def setup_logging(log_dir: str) -> str:
+    """Configure logging to write to both console and a timestamped logfile.
+
+    Returns the path to the created logfile.
+    """
+    os.makedirs(log_dir, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    log_path = os.path.join(log_dir, f"training_{timestamp}.log")
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+
+    # Clear any existing handlers (e.g. from basicConfig or reimport)
+    root_logger.handlers.clear()
+
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    console_handler.setFormatter(logging.Formatter(LOG_FORMAT))
+    root_logger.addHandler(console_handler)
+
+    file_handler = logging.FileHandler(log_path, mode="w")
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(logging.Formatter(LOG_FORMAT))
+    root_logger.addHandler(file_handler)
+
+    logging.info(f"Logging to: {log_path}")
+    return log_path
 
 LATENT_DIM: int = 256
 """Node embedding dimensionality of orb_v3 omol models."""
@@ -72,8 +103,22 @@ def init_wandb_from_config(dataset: str, job_type: str, entity: str) -> Any:
     return wandb.run
 
 
+def _format_lr_summary(optimizer: torch.optim.Optimizer) -> str:
+    """Return a compact LR string: single value if uniform, backbone/heads split otherwise."""
+    lrs = [g["lr"] for g in optimizer.param_groups]
+    unique_lrs = set(f"{lr:.2e}" for lr in lrs)
+    if len(unique_lrs) == 1:
+        return next(iter(unique_lrs))
+    # Group by distinct LR values and count param groups
+    counts = Counter(f"{lr:.2e}" for lr in lrs)
+    return ", ".join(f"{lr} ({n} groups)" for lr, n in counts.items())
+
+
 def run(args: argparse.Namespace) -> None:
     """Top-level training orchestrator."""
+    log_path = setup_logging(args.checkpoint_path)
+    logging.info(f"Full configuration: {vars(args)}")
+
     device = init_device(device_id=args.device_id)
     seed_everything(args.random_seed)
 
@@ -284,8 +329,8 @@ def run(args: argparse.Namespace) -> None:
                         noise = torch.randn_like(param) * args.weight_head_noise_std
                         param.add_(noise)
 
-        current_lrs = [f"{g['lr']:.2e}" for g in optimizer.param_groups]
-        logging.info(f"Epoch {epoch} — LRs: {current_lrs}")
+        lr_summary = _format_lr_summary(optimizer)
+        logging.info(f"Epoch {epoch} — LR: {lr_summary}")
 
         epoch_metrics = finetune(
             model=model,
