@@ -42,7 +42,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import tqdm
-from torch.utils.data import BatchSampler, DataLoader, RandomSampler
+from torch.utils.data import BatchSampler, DataLoader, RandomSampler, SubsetRandomSampler
 
 try:
     import wandb
@@ -123,6 +123,35 @@ def build_graph_index(n_node: torch.Tensor, device: torch.device) -> torch.Tenso
     return torch.repeat_interleave(
         torch.arange(len(n_node), device=device), n_node
     )
+
+
+def split_train_val(
+    total_size: int,
+    val_fraction: float,
+    seed: int,
+) -> tuple[list[int], list[int]]:
+    """Split dataset indices into train and validation sets.
+
+    Uses a seeded permutation so the split is reproducible across runs.
+
+    Args:
+        total_size: Total number of samples in the dataset.
+        val_fraction: Fraction of data to use for validation (0.0–1.0).
+        seed: Random seed for reproducibility.
+
+    Returns:
+        ``(train_indices, val_indices)`` — disjoint lists of integer indices.
+    """
+    rng = np.random.RandomState(seed)
+    indices = rng.permutation(total_size).tolist()
+    n_val = max(1, int(total_size * val_fraction))
+    val_indices = sorted(indices[:n_val])
+    train_indices = sorted(indices[n_val:])
+    logging.info(
+        f"Train/val split: {len(train_indices)} train, {len(val_indices)} val "
+        f"({val_fraction:.0%} val, seed={seed})"
+    )
+    return train_indices, val_indices
 
 
 # ---------------------------------------------------------------------------
@@ -329,7 +358,7 @@ def build_heads(
         nn.Linear(1024, 1024),
         nn.SiLU(),
         nn.Linear(1024, NUM_BANDS),
-        nn.Softplus(),  # Guarantees weights ≥ 0
+        nn.Sigmoid(),  # Guarantees weights ≥ 0
     ).to(device)
 
     # Initialize the bias of the final linear layer in the weight head
@@ -380,6 +409,7 @@ def build_train_loader(
     atoms_adapter: AbstractAtomsAdapter,
     augmentation: bool | None = True,
     target_config: dict[str, list[str]] | None = None,
+    train_indices: list[int] | None = None,
     **kwargs: Any,
 ) -> DataLoader:
     """Build the training DataLoader from an ASE SQLite database.
@@ -415,7 +445,10 @@ def build_train_loader(
     log_train += f"Total train dataset size: {len(dataset)} samples"
     logging.info(log_train)
 
-    sampler = RandomSampler(dataset)
+    if train_indices is not None:
+        sampler = SubsetRandomSampler(train_indices)
+    else:
+        sampler = RandomSampler(dataset)
 
     batch_sampler = BatchSampler(
         sampler,
@@ -437,6 +470,7 @@ def build_train_loader(
 def cache_eval_frames(
     data_path: str,
     atoms_adapter: AbstractAtomsAdapter,
+    val_indices: set[int] | None = None,
 ) -> list[tuple[Any, dict[str, Any]]]:
     """Preprocess and cache all database frames for evaluation.
 
@@ -454,7 +488,9 @@ def cache_eval_frames(
     db = ase.db.connect(data_path)
     eval_frames: list[tuple[Any, dict[str, Any]]] = []
 
-    for row in db.select():
+    for idx, row in enumerate(db.select()):
+        if val_indices is not None and idx not in val_indices:
+            continue
         test_atoms = row.toatoms()
         single_graph = atoms_adapter.from_ase_atoms(test_atoms)
         gt: dict[str, Any] = {
@@ -646,6 +682,8 @@ def save_checkpoint(
     weight_head: nn.Module,
     optimizer: torch.optim.Optimizer,
     lr_scheduler: Any | None,
+    config: dict[str, Any] | None = None,
+    filename: str | None = None,
 ) -> None:
     """Save a training checkpoint to disk.
 
@@ -657,6 +695,8 @@ def save_checkpoint(
         weight_head: PDOS weight prediction head.
         optimizer: Optimizer (state is saved for resumption).
         lr_scheduler: LR scheduler (state saved if not ``None``).
+        config: Training configuration dict (saved for reproducibility).
+        filename: Override the default checkpoint filename.
     """
     os.makedirs(path, exist_ok=True)
     checkpoint_data = {
@@ -666,8 +706,9 @@ def save_checkpoint(
         "weight_head_state": weight_head.state_dict(),
         "optimizer": optimizer.state_dict(),
         "lr_scheduler": lr_scheduler.state_dict() if lr_scheduler is not None else None,
+        "config": config,
     }
-    filepath = os.path.join(path, f"checkpoint_epoch{epoch}.ckpt")
+    filepath = os.path.join(path, filename or f"checkpoint_epoch{epoch}.ckpt")
     torch.save(checkpoint_data, filepath)
     logging.info(f"Checkpoint saved to {path}")
 
@@ -912,9 +953,15 @@ def finetune(
             if clip_grad is not None:
                 # Clip gradients for all three parameter groups independently
                 # to prevent instability when the heads first start training.
-                torch.nn.utils.clip_grad_norm_(model.parameters(), clip_grad)
-                torch.nn.utils.clip_grad_norm_(eigenvalue_head.parameters(), clip_grad)
-                torch.nn.utils.clip_grad_norm_(weight_head.parameters(), clip_grad)
+                # clip_grad_norm_ returns the pre-clip total norm for diagnostics.
+                backbone_gnorm = torch.nn.utils.clip_grad_norm_(model.parameters(), clip_grad)
+                eig_head_gnorm = torch.nn.utils.clip_grad_norm_(eigenvalue_head.parameters(), clip_grad)
+                w_head_gnorm = torch.nn.utils.clip_grad_norm_(weight_head.parameters(), clip_grad)
+                metrics.update({
+                    "grad_norm/backbone": backbone_gnorm.detach(),
+                    "grad_norm/eigenvalue_head": eig_head_gnorm.detach(),
+                    "grad_norm/weight_head": w_head_gnorm.detach(),
+                })
 
             optimizer.step()
 
@@ -1208,9 +1255,21 @@ def run(args: argparse.Namespace) -> None:
         wandb.define_metric("step")
         wandb.define_metric("finetune_step/*", step_metric="step")
 
-    # --- Data ---
+    # --- Data (train/val split) ---
     graph_targets = ["energy", "stress"] if model.has_stress else ["energy"]
     graph_targets.append("eigenvalues")
+
+    # Compute train/val split before building the DataLoader
+    train_indices: list[int] | None = None
+    val_indices: set[int] | None = None
+    if args.val_fraction > 0.0:
+        db = ase.db.connect(args.data_path)
+        total_size = db.count()
+        train_idx_list, val_idx_list = split_train_val(
+            total_size, args.val_fraction, args.random_seed
+        )
+        train_indices = train_idx_list
+        val_indices = set(val_idx_list)
 
     train_loader = build_train_loader(
         dataset_name=args.dataset,
@@ -1220,15 +1279,18 @@ def run(args: argparse.Namespace) -> None:
         target_config={"graph": graph_targets, "node": ["forces", "weights"]},
         atoms_adapter=atoms_adapter,
         augmentation=True,
+        train_indices=train_indices,
     )
 
     eval_frames: list[tuple[Any, dict[str, Any]]] = []
     if args.eval_every_x_epochs > 0:
-        eval_frames = cache_eval_frames(args.data_path, atoms_adapter)
+        eval_frames = cache_eval_frames(args.data_path, atoms_adapter, val_indices=val_indices)
 
     # --- Training loop ---
     logging.info("Starting training!")
     num_steps = args.num_steps if args.num_steps > 0 else None
+    best_composite_metric = float("inf")
+    config_dict = vars(args)
 
     for epoch in range(start_epoch, args.max_epochs):
         # Dynamic unfreezing check
@@ -1286,7 +1348,8 @@ def run(args: argparse.Namespace) -> None:
                         noise = torch.randn_like(param) * args.weight_head_noise_std
                         param.add_(noise)
 
-        logging.info(f"Start epoch: {epoch} training...")
+        current_lrs = [f"{g['lr']:.2e}" for g in optimizer.param_groups]
+        logging.info(f"Epoch {epoch} — LRs: {current_lrs}")
 
         epoch_metrics = finetune(
             model=model,
@@ -1359,6 +1422,21 @@ def run(args: argparse.Namespace) -> None:
                     "epoch": epoch,
                 })
 
+            # Best-model checkpointing
+            composite_metric = eval_metrics["eigs_rmse"] + eval_metrics["weights_rmse"]
+            if composite_metric < best_composite_metric:
+                logging.info(
+                    f"  ★ New best model (composite={composite_metric:.4f}, "
+                    f"prev best={best_composite_metric:.4f})"
+                )
+                best_composite_metric = composite_metric
+                save_checkpoint(
+                    args.checkpoint_path, epoch,
+                    model, eigenvalue_head, weight_head,
+                    optimizer, lr_scheduler,
+                    config=config_dict, filename="best_model.ckpt",
+                )
+
             # Metrics explosion safety check (only active once GNN backbone is unfrozen)
             is_unfrozen = args.unfreeze_epoch is None or epoch >= args.unfreeze_epoch
             exploding_eigs = eval_metrics["eigs_rmse"] > 5.0
@@ -1375,6 +1453,7 @@ def run(args: argparse.Namespace) -> None:
                 args.checkpoint_path, epoch,
                 model, eigenvalue_head, weight_head,
                 optimizer, lr_scheduler,
+                config=config_dict,
             )
 
     if wandb_run is not None:
@@ -1425,6 +1504,7 @@ def main() -> None:
     parser.add_argument("--eigenvalue_loss_weight", default=0.02, type=float, help="Loss weight scaling factor for eigenvalues.")
     parser.add_argument("--weight_loss_weight", default=1.0, type=float, help="Loss weight scaling factor for PDOS weights.")
     parser.add_argument("--eval_every_x_epochs", default=1, type=int, help="Frequency of running evaluation on cached database frames. Set to 0 to disable.")
+    parser.add_argument("--val_fraction", default=0.1, type=float, help="Fraction of data to hold out for validation (0.0 = train on all, evaluate on all).")
 
     args, _ = parser.parse_known_args()
     run(args)
