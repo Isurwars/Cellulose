@@ -3,13 +3,14 @@ uv run python train_electronic.py \
   --data_path cellulose_finetuning.db \
   --base_model orb_v3_direct_omol \
   --custom_reference_energies refs.json \
-  --energy_loss_weight 0.01 \
-  --forces_loss_weight 30.0 \
+  --energy_loss_weight 0.0 \
+  --stress_loss_weight 0.0 \
+  --forces_loss_weight 2.0 \
   --eigenvalue_loss_weight 0.02 \
-  --weight_loss_weight 50.0 \
+  --weight_loss_weight 20.0 \
   --scheduler flat_cosine \
   --unfreeze_epoch 3 \
-  --backbone_lr 3e-4 \
+  --backbone_lr 1e-3 \
   --lr 1e-3 \
   --min_lr 1e-5 \
   --weight_head_noise_std 5e-5 \
@@ -17,4 +18,4 @@ uv run python train_electronic.py \
   --batch_size 1 \
   --num_steps 0 \
   --eval_every_x_epochs 1 \
-  --max_epochs 201 
+  --max_epochs 101 
