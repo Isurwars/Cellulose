@@ -7,10 +7,14 @@ uv run python train_electronic.py \
   --stress_loss_weight 0.0 \
   --forces_loss_weight 1.0 \
   --eigenvalue_loss_weight 1.0 \
-  --weight_loss_weight 2.0 \
+  --weight_loss_weight 3.0 \
+  --pdos_peak_boost 5.0 \
+  --pdos_cosine_weight 0.3 \
+  --use_force_residual \
+  --force_huber_delta 0.1 \
   --scheduler flat_cosine \
   --unfreeze_epoch 3 \
-  --backbone_lr 1e-5 \
+  --backbone_lr 5e-5 \
   --lr 1e-3 \
   --min_lr 1e-5 \
   --weight_head_noise_std 5e-5 \
@@ -18,6 +22,7 @@ uv run python train_electronic.py \
   --batch_size 4 \
   --num_steps 0 \
   --eval_every_x_epochs 1 \
-  --max_epochs 101 \
+  --max_epochs 21 \
   --warmup_epochs 1 \
-  --normalize_eigenvalues
+  --normalize_eigenvalues \
+  --normalize_forces

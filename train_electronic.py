@@ -169,8 +169,9 @@ def run(args: argparse.Namespace) -> None:
     logging.info(f"Base Model has {model_params:,} trainable parameters.")
 
     # --- Heads ---
-    eigenvalue_head, weight_head, attention_pool = build_heads(
-        LATENT_DIM, device, dropout=args.dropout, couple_heads=args.couple_heads
+    eigenvalue_head, weight_head, attention_pool, force_residual_head = build_heads(
+        LATENT_DIM, device, dropout=args.dropout, couple_heads=args.couple_heads,
+        use_force_residual=args.use_force_residual
     )
     model.to(device=device)
 
@@ -181,7 +182,10 @@ def run(args: argparse.Namespace) -> None:
             param.requires_grad = False
 
     # --- Optimizer ---
-    optimizer = build_optimizer(model, eigenvalue_head, weight_head, attention_pool, args)
+    optimizer = build_optimizer(
+        model, eigenvalue_head, weight_head, attention_pool, args,
+        force_residual_head=force_residual_head
+    )
 
     # --- Scheduler ---
     lr_scheduler, cosine_start_epoch = build_scheduler(
@@ -194,12 +198,14 @@ def run(args: argparse.Namespace) -> None:
     start_epoch = 0
     checkpoint_mean_eigs = None
     checkpoint_std_eigs = None
+    checkpoint_std_forces = None
     if args.resume_from_checkpoint:
-        start_epoch, checkpoint_mean_eigs, checkpoint_std_eigs = resume_checkpoint(
+        start_epoch, checkpoint_mean_eigs, checkpoint_std_eigs, checkpoint_std_forces = resume_checkpoint(
             args.resume_from_checkpoint,
             model, eigenvalue_head, weight_head, attention_pool,
             optimizer, lr_scheduler, device,
             unfreeze_epoch=args.unfreeze_epoch,
+            force_residual_head=force_residual_head,
         )
 
     # --- Wandb ---
@@ -250,6 +256,28 @@ def run(args: argparse.Namespace) -> None:
             std_eigenvalues = torch.clamp(std_eigenvalues, min=1e-5)
             logging.info("Eigenvalue statistics computed.")
 
+    std_forces: torch.Tensor | None = None
+    if args.normalize_forces:
+        if checkpoint_std_forces is not None:
+            std_forces = checkpoint_std_forces
+            logging.info("Using force normalization statistics from resumed checkpoint.")
+        else:
+            logging.info("Computing training set force statistics for normalization...")
+            db = ase.db.connect(args.data_path)
+            train_indices_set = set(train_indices) if train_indices is not None else set(range(db.count()))
+            all_forces = []
+            for idx, row in enumerate(db.select()):
+                if idx in train_indices_set and hasattr(row, 'forces') and row.forces is not None:
+                    all_forces.append(row.forces)
+            if len(all_forces) > 0:
+                all_forces = np.concatenate(all_forces, axis=0)
+                var_forces = float(np.var(all_forces))
+                std_forces = torch.tensor(np.sqrt(var_forces), dtype=torch.float32, device=device)
+                std_forces = torch.clamp(std_forces, min=1e-5)
+                logging.info(f"Force statistics computed. Force variance: {var_forces:.6f} (std: {std_forces.item():.6f})")
+            else:
+                logging.warning("No forces found in training set. Force normalization disabled.")
+
     train_loader = data.build_train_loader(
         dataset_name=args.dataset,
         dataset_path=args.data_path,
@@ -291,9 +319,10 @@ def run(args: argparse.Namespace) -> None:
 
         if args.unfreeze_epoch is not None and epoch == args.unfreeze_epoch:
             logging.info(f"--- Unfreezing GNN backbone at epoch {epoch} ---")
-            head_params_set = set(
-                list(eigenvalue_head.parameters()) + list(weight_head.parameters()) + list(attention_pool.parameters())
-            )
+            head_params_list = list(eigenvalue_head.parameters()) + list(weight_head.parameters()) + list(attention_pool.parameters())
+            if force_residual_head is not None:
+                head_params_list += list(force_residual_head.parameters())
+            head_params_set = set(head_params_list)
             for idx, group in enumerate(optimizer.param_groups):
                 is_backbone = any(p not in head_params_set for p in group["params"])
                 if is_backbone:
@@ -356,10 +385,14 @@ def run(args: argparse.Namespace) -> None:
             pdos_active_threshold=args.pdos_active_threshold,
             pdos_magnitude_weight=args.pdos_magnitude_weight,
             pdos_cramer_weight=args.pdos_cramer_weight,
+            pdos_cosine_weight=args.pdos_cosine_weight,
             couple_heads=args.couple_heads,
             detach_coupling=args.detach_coupling,
             mean_eigenvalues=mean_eigenvalues,
             std_eigenvalues=std_eigenvalues,
+            std_forces=std_forces,
+            force_residual_head=force_residual_head,
+            force_huber_delta=args.force_huber_delta,
         )
 
         if lr_scheduler is not None:
@@ -393,28 +426,39 @@ def run(args: argparse.Namespace) -> None:
                 couple_heads=args.couple_heads,
                 mean_eigenvalues=mean_eigenvalues,
                 std_eigenvalues=std_eigenvalues,
+                force_residual_head=force_residual_head,
             )
             logging.info("=" * 60)
             logging.info(f"Epoch {epoch} Evaluation Metrics:")
-            logging.info(f"  Eigenvalues RMSE: {eval_metrics['eigs_rmse']:.4f} eV")
-            logging.info(f"  Weights RMSE:     {eval_metrics['weights_rmse']:.4f}")
+            logging.info(f"  Eigenvalues RMSE: {eval_metrics['eigs_rmse']:.4f} eV (R²: {eval_metrics['eigs_r2']:.4f})")
+            logging.info(f"  Weights RMSE:     {eval_metrics['weights_rmse']:.4f} (R²: {eval_metrics['weights_r2']:.4f})")
             forces_rmse_str = (
                 f"{eval_metrics['forces_rmse']:.4f} eV/Å"
                 if not np.isnan(eval_metrics["forces_rmse"])
                 else "N/A (fast eval)"
             )
-            logging.info(f"  Forces RMSE:      {forces_rmse_str}")
+            forces_r2_str = (
+                f"{eval_metrics['forces_r2']:.4f}"
+                if not np.isnan(eval_metrics["forces_r2"])
+                else "N/A"
+            )
+            logging.info(f"  Forces RMSE:      {forces_rmse_str} (R²: {forces_r2_str})")
             logging.info("=" * 60)
 
             if wandb_run is not None:
                 wandb_run.log({
                     "eval/eigs_rmse": eval_metrics["eigs_rmse"],
+                    "eval/eigs_r2": eval_metrics["eigs_r2"],
                     "eval/weights_rmse": eval_metrics["weights_rmse"],
+                    "eval/weights_r2": eval_metrics["weights_r2"],
                     "eval/forces_rmse": eval_metrics["forces_rmse"],
+                    "eval/forces_r2": eval_metrics["forces_r2"],
                     "epoch": epoch,
                 })
 
-            composite_metric = eval_metrics["eigs_rmse"] + eval_metrics["weights_rmse"]
+            # Composite metric: sum of eigenvalue, weights, and force RMSE
+            forces_val = eval_metrics["forces_rmse"] if not np.isnan(eval_metrics["forces_rmse"]) else 0.0
+            composite_metric = eval_metrics["eigs_rmse"] + eval_metrics["weights_rmse"] + 0.5 * forces_val
             if composite_metric < best_composite_metric:
                 logging.info(
                     f"  ★ New best model (composite={composite_metric:.4f}, "
@@ -428,6 +472,8 @@ def run(args: argparse.Namespace) -> None:
                     config=config_dict, filename="best_model.ckpt",
                     mean_eigenvalues=mean_eigenvalues,
                     std_eigenvalues=std_eigenvalues,
+                    std_forces=std_forces,
+                    force_residual_head=force_residual_head,
                 )
 
             is_unfrozen = args.unfreeze_epoch is None or epoch >= args.unfreeze_epoch
@@ -447,6 +493,8 @@ def run(args: argparse.Namespace) -> None:
                 config=config_dict,
                 mean_eigenvalues=mean_eigenvalues,
                 std_eigenvalues=std_eigenvalues,
+                std_forces=std_forces,
+                force_residual_head=force_residual_head,
             )
 
     if wandb_run is not None:
@@ -492,18 +540,22 @@ def main() -> None:
     parser.add_argument("--weight_head_noise_interval", default=5, type=int, help="Epoch interval at which noise is injected into weight_head.")
     parser.add_argument("--eigenvalue_loss_weight", default=0.02, type=float, help="Loss weight scaling factor for eigenvalues.")
     parser.add_argument("--normalize_eigenvalues", action="store_true", help="Normalize target eigenvalues using training set mean/std.")
+    parser.add_argument("--normalize_forces", action="store_true", help="Normalize target forces by dividing the loss by the training set force variance.")
     parser.add_argument("--weight_loss_weight", default=1.0, type=float, help="Loss weight scaling factor for PDOS weights.")
     parser.add_argument("--eval_every_x_epochs", default=1, type=int, help="Frequency of running evaluation on cached database frames. Set to 0 to disable.")
     parser.add_argument("--val_fraction", default=0.1, type=float, help="Fraction of data to hold out for validation (0.0 = train on all, evaluate on all).")
     parser.add_argument("--dropout", default=0.1, type=float, help="Dropout rate in the heads (0.0 to disable).")
     parser.add_argument("--eig_loss_type", default="mse", choices=["mse", "huber"], help="Loss type for eigenvalues ('mse' or 'huber').")
     parser.add_argument("--huber_delta", default=1.0, type=float, help="Delta threshold for Huber loss.")
-    parser.add_argument("--pdos_peak_boost", default=20.0, type=float, help="PDOS peak boost factor inside loss.")
+    parser.add_argument("--pdos_peak_boost", default=5.0, type=float, help="PDOS peak boost factor inside loss.")
     parser.add_argument("--pdos_active_threshold", default=0.1, type=float, help="Threshold for active nodes in Cramér shape loss.")
     parser.add_argument("--pdos_magnitude_weight", default=3.0, type=float, help="Magnitude component weight in PDOS loss.")
     parser.add_argument("--pdos_cramer_weight", default=0.5, type=float, help="Cramér shape component weight in PDOS loss.")
+    parser.add_argument("--pdos_cosine_weight", default=0.3, type=float, help="Cosine shape component weight in PDOS loss.")
     parser.add_argument("--no_couple_heads", action="store_false", dest="couple_heads", help="Do not couple the eigenvalue head to the weight head.")
     parser.add_argument("--detach_coupling", action="store_true", help="Detach the predicted eigenvalues before feeding them to the weight head to prevent weight gradients from flowing back to the eigenvalue head.")
+    parser.add_argument("--use_force_residual", action="store_true", help="Use ForceResidualHead to learn domain-specific force corrections.")
+    parser.add_argument("--force_huber_delta", default=0.1, type=float, help="Huber delta for force loss.")
 
     args, _ = parser.parse_known_args()
     run(args)

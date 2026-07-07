@@ -46,11 +46,38 @@ class AttentionPool(nn.Module):
         return scatter_sum(x * attn_weights, graph_idx, dim=0)
 
 
+class ForceResidualHead(nn.Module):
+    """Learns a domain-specific correction to pretrained force predictions.
+
+    Zero-initialized so initial output ≈ 0 — training starts from the
+    pretrained Orb baseline and the head only learns the *residual* error.
+    """
+
+    def __init__(self, latent_dim: int, hidden_dim: int = 256, dropout: float = 0.0) -> None:
+        super().__init__()
+        self.mlp = nn.Sequential(
+            nn.LayerNorm(latent_dim),
+            nn.Linear(latent_dim, hidden_dim),
+            nn.SiLU(),
+            nn.Dropout(dropout),
+            ResidualBlock(hidden_dim, dropout),
+            nn.Linear(hidden_dim, 3),
+        )
+        # Zero-init final layer so initial predictions ≈ pretrained
+        nn.init.zeros_(self.mlp[-1].weight)
+        nn.init.zeros_(self.mlp[-1].bias)
+
+    def forward(self, node_features: torch.Tensor) -> torch.Tensor:
+        """Return per-atom force corrections [N_atoms, 3]."""
+        return self.mlp(node_features)
+
+
 class WeightHead(nn.Module):
     """PDOS Weight Prediction Head with Group Normalisation.
 
     Applies LayerNorm to node-level GNN features and eigenvalues separately
-    before concatenating and processing through an MLP.
+    before concatenating and processing through an MLP.  Uses two residual
+    blocks and a pre-output LayerNorm for extra capacity and stable gradients.
     """
     def __init__(
         self,
@@ -75,11 +102,14 @@ class WeightHead(nn.Module):
             nn.SiLU(),
             nn.Dropout(dropout),
             ResidualBlock(hidden_dim, dropout),
+            ResidualBlock(hidden_dim, dropout),   # extra capacity
+            nn.LayerNorm(hidden_dim),             # stable pre-output norm
             nn.Linear(hidden_dim, num_bands),
             nn.Sigmoid(),
         )
 
-        # Standard initialization to prevent zero weight collapse on sigmoids
+        # Initialize the pre-sigmoid linear bias so outputs start near 0.3
+        # (middle-low range) — avoids saturation at extremes.
         nn.init.constant_(self.mlp[-2].bias, -1.0)
 
     def forward(self, node_features: torch.Tensor, node_eigenvalues: torch.Tensor | None = None) -> torch.Tensor:
@@ -95,8 +125,13 @@ def build_heads(
     device: torch.device,
     dropout: float = 0.0,
     couple_heads: bool = False,
-) -> tuple[nn.Module, WeightHead, AttentionPool]:
-    """Helper to instantiate all three prediction heads and place them on device."""
+    use_force_residual: bool = False,
+) -> tuple[nn.Module, WeightHead, AttentionPool, ForceResidualHead | None]:
+    """Helper to instantiate prediction heads and place them on device.
+
+    Returns ``(eigenvalue_head, weight_head, attention_pool, force_residual_head)``.
+    ``force_residual_head`` is ``None`` when *use_force_residual* is ``False``.
+    """
     hidden_dim = 1024
 
     eigenvalue_head = nn.Sequential(
@@ -118,4 +153,10 @@ def build_heads(
 
     attention_pool = AttentionPool(latent_dim).to(device)
 
-    return eigenvalue_head, weight_head, attention_pool
+    force_residual_head: ForceResidualHead | None = None
+    if use_force_residual:
+        force_residual_head = ForceResidualHead(
+            latent_dim, hidden_dim=256, dropout=dropout,
+        ).to(device)
+
+    return eigenvalue_head, weight_head, attention_pool, force_residual_head

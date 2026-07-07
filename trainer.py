@@ -23,8 +23,8 @@ from orb_models.common.training.metrics import ScalarMetricTracker
 from orb_models.common.atoms.abstract_atoms_adapter import AbstractAtomsAdapter
 
 from utils import build_graph_index, prefix_keys
-from losses import compute_electronic_losses
-from models import AttentionPool, WeightHead
+from losses import compute_electronic_losses, compute_force_loss
+from models import AttentionPool, ForceResidualHead, WeightHead
 
 
 def build_loss_weights(args: argparse.Namespace) -> dict[str, float]:
@@ -64,6 +64,7 @@ def build_optimizer(
     weight_head: nn.Module,
     attention_pool: AttentionPool,
     args: argparse.Namespace,
+    force_residual_head: ForceResidualHead | None = None,
 ) -> torch.optim.Optimizer:
     """Build the Adam optimizer with per-group learning rates."""
     include_backbone = (not args.freeze_backbone) or (args.unfreeze_epoch is not None)
@@ -86,6 +87,8 @@ def build_optimizer(
     params.append({"params": eigenvalue_head.parameters(), "lr": args.lr})
     params.append({"params": weight_head.parameters(), "lr": args.lr})
     params.append({"params": attention_pool.parameters(), "lr": args.lr})
+    if force_residual_head is not None:
+        params.append({"params": force_residual_head.parameters(), "lr": args.lr})
 
     return torch.optim.Adam(params)
 
@@ -99,20 +102,36 @@ def build_scheduler(
     """Build the learning-rate scheduler.
 
     When ``args.warmup_epochs`` > 0, prepends a linear warmup ramp to
-    whatever base schedule is selected.
+    whatever base schedule is selected. Employs a flat SequentialLR
+    structure to avoid nested SequentialLR issues.
     """
     cosine_start_epoch: int | None = None
     warmup_epochs: int = getattr(args, "warmup_epochs", 0)
 
+    schedulers: list[torch.optim.lr_scheduler._LRScheduler] = []
+
+    # 1. Warmup Phase
+    if warmup_epochs > 0:
+        if args.scheduler == "plateau":
+            logging.warning("Warmup is not supported with ReduceLROnPlateau. Skipping warmup.")
+        else:
+            logging.info(f"Adding {warmup_epochs}-epoch linear warmup to scheduler.")
+            warmup_scheduler = torch.optim.lr_scheduler.LinearLR(
+                optimizer, start_factor=1e-2, end_factor=1.0, total_iters=warmup_epochs
+            )
+            schedulers.append(warmup_scheduler)
+
+    # 2. Base Scheduler Phases
     if args.scheduler == "cosine":
         logging.info("Initializing CosineAnnealingLR scheduler.")
-        base_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        cosine_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
             optimizer, T_max=max(1, total_epochs - warmup_epochs), eta_min=args.min_lr
         )
+        schedulers.append(cosine_scheduler)
         cosine_start_epoch = warmup_epochs
 
     elif args.scheduler == "flat_cosine":
-        logging.info("Initializing Flat-Cosine (SequentialLR) scheduler.")
+        logging.info("Initializing Flat-Cosine scheduler.")
         T_flat = (total_epochs - warmup_epochs) // 2
 
         if unfreeze_offset is not None:
@@ -127,46 +146,55 @@ def build_scheduler(
             scheduler2 = torch.optim.lr_scheduler.CosineAnnealingLR(
                 optimizer, T_max=max(1, total_epochs - warmup_epochs - T_flat), eta_min=args.min_lr
             )
-            base_scheduler = torch.optim.lr_scheduler.SequentialLR(
-                optimizer, schedulers=[scheduler1, scheduler2], milestones=[T_flat]
-            )
+            schedulers.append(scheduler1)
+            schedulers.append(scheduler2)
         else:
-            base_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            cosine_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
                 optimizer, T_max=max(1, total_epochs - warmup_epochs), eta_min=args.min_lr
             )
+            schedulers.append(cosine_scheduler)
 
     elif args.scheduler == "plateau":
         logging.info("Initializing ReduceLROnPlateau scheduler (stepped per epoch).")
-        base_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        # Plateau cannot be used in SequentialLR, so we return it directly
+        plateau_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer, mode="min", factor=0.5, patience=3, min_lr=args.min_lr
         )
-        cosine_start_epoch = None
+        return plateau_scheduler, None
 
     else:
         logging.info("No learning rate scheduler specified (constant learning rate).")
-        base_scheduler = None
-        cosine_start_epoch = None
+        if len(schedulers) == 1:
+            # Only warmup scheduler exists; append constant scheduler for remaining epochs
+            remaining_epochs = max(1, total_epochs - warmup_epochs)
+            constant_scheduler = torch.optim.lr_scheduler.ConstantLR(
+                optimizer, factor=1.0, total_iters=remaining_epochs
+            )
+            schedulers.append(constant_scheduler)
+        elif len(schedulers) == 0:
+            return None, None
 
-    # Prepend linear warmup if requested
-    if warmup_epochs > 0 and base_scheduler is not None:
-        if isinstance(base_scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
-            # ReduceLROnPlateau can't be composed with SequentialLR; skip warmup
-            logging.warning("Warmup is not supported with ReduceLROnPlateau. Skipping warmup.")
-            lr_scheduler = base_scheduler
-        else:
-            logging.info(f"Prepending {warmup_epochs}-epoch linear warmup to scheduler.")
-            warmup_scheduler = torch.optim.lr_scheduler.LinearLR(
-                optimizer, start_factor=1e-2, end_factor=1.0, total_iters=warmup_epochs
-            )
-            lr_scheduler = torch.optim.lr_scheduler.SequentialLR(
-                optimizer,
-                schedulers=[warmup_scheduler, base_scheduler],
-                milestones=[warmup_epochs],
-            )
+    # Construct the flat SequentialLR if we have multiple schedulers
+    if len(schedulers) == 1:
+        return schedulers[0], cosine_start_epoch
     else:
-        lr_scheduler = base_scheduler
+        milestones = []
+        accumulated = 0
+        if warmup_epochs > 0:
+            accumulated += warmup_epochs
+            milestones.append(accumulated)
+            if args.scheduler == "flat_cosine" and T_flat > 0:
+                accumulated += T_flat
+                milestones.append(accumulated)
+        else:
+            if args.scheduler == "flat_cosine" and T_flat > 0:
+                accumulated += T_flat
+                milestones.append(accumulated)
 
-    return lr_scheduler, cosine_start_epoch
+        logging.info(f"Constructing SequentialLR with milestones: {milestones}")
+        return torch.optim.lr_scheduler.SequentialLR(
+            optimizer, schedulers=schedulers, milestones=milestones
+        ), cosine_start_epoch
 
 
 def save_checkpoint(
@@ -183,6 +211,8 @@ def save_checkpoint(
     *,
     mean_eigenvalues: torch.Tensor | None = None,
     std_eigenvalues: torch.Tensor | None = None,
+    std_forces: torch.Tensor | None = None,
+    force_residual_head: ForceResidualHead | None = None,
 ) -> None:
     """Save a training checkpoint to disk."""
     os.makedirs(path, exist_ok=True)
@@ -197,6 +227,8 @@ def save_checkpoint(
         "config": config,
         "mean_eigenvalues": mean_eigenvalues,
         "std_eigenvalues": std_eigenvalues,
+        "std_forces": std_forces,
+        "force_residual_head_state": force_residual_head.state_dict() if force_residual_head is not None else None,
     }
     filepath = os.path.join(path, filename or f"checkpoint_epoch{epoch}.ckpt")
     torch.save(checkpoint_data, filepath)
@@ -213,7 +245,8 @@ def resume_checkpoint(
     lr_scheduler: Any | None,
     device: torch.device,
     unfreeze_epoch: int | None,
-) -> tuple[int, torch.Tensor | None, torch.Tensor | None]:
+    force_residual_head: ForceResidualHead | None = None,
+) -> tuple[int, torch.Tensor | None, torch.Tensor | None, torch.Tensor | None]:
     """Restore model, heads, attention pool, optimizer, and scheduler from a checkpoint."""
     logging.info(f"Resuming from checkpoint: {checkpoint_path}")
     checkpoint = torch.load(checkpoint_path, map_location=device)
@@ -225,6 +258,12 @@ def resume_checkpoint(
         attention_pool.load_state_dict(checkpoint["attention_pool_state"])
     else:
         logging.warning("No attention_pool_state in checkpoint (old format); using fresh init.")
+
+    if force_residual_head is not None and "force_residual_head_state" in checkpoint and checkpoint["force_residual_head_state"] is not None:
+        force_residual_head.load_state_dict(checkpoint["force_residual_head_state"])
+        logging.info("Loaded force_residual_head state from checkpoint.")
+    elif force_residual_head is not None:
+        logging.warning("No force_residual_head_state in checkpoint; using fresh init.")
 
     try:
         optimizer.load_state_dict(checkpoint["optimizer"])
@@ -248,8 +287,9 @@ def resume_checkpoint(
 
     mean_eigenvalues = checkpoint.get("mean_eigenvalues", None)
     std_eigenvalues = checkpoint.get("std_eigenvalues", None)
+    std_forces = checkpoint.get("std_forces", None)
 
-    return start_epoch, mean_eigenvalues, std_eigenvalues
+    return start_epoch, mean_eigenvalues, std_eigenvalues, std_forces
 
 
 def finetune(
@@ -274,14 +314,18 @@ def finetune(
     *,
     eig_loss_type: str = "mse",
     huber_delta: float = 1.0,
-    pdos_peak_boost: float = 20.0,
+    pdos_peak_boost: float = 5.0,
     pdos_active_threshold: float = 0.1,
     pdos_magnitude_weight: float = 3.0,
     pdos_cramer_weight: float = 0.5,
+    pdos_cosine_weight: float = 0.3,
     couple_heads: bool = False,
     detach_coupling: bool = False,
     mean_eigenvalues: torch.Tensor | None = None,
     std_eigenvalues: torch.Tensor | None = None,
+    std_forces: torch.Tensor | None = None,
+    force_residual_head: ForceResidualHead | None = None,
+    force_huber_delta: float = 0.1,
 ) -> dict[str, float]:
     """Run one epoch of electronic-structure finetuning."""
     run_handle: Any | None = wandb.run if WANDB_AVAILABLE else None
@@ -297,6 +341,8 @@ def finetune(
     eigenvalue_head.train()
     weight_head.train()
     attention_pool.train()
+    if force_residual_head is not None:
+        force_residual_head.train()
 
     num_training_batches: int | float
     if num_steps is not None:
@@ -363,6 +409,7 @@ def finetune(
                 active_threshold=pdos_active_threshold,
                 magnitude_weight=pdos_magnitude_weight,
                 cramer_weight=pdos_cramer_weight,
+                cosine_weight=pdos_cosine_weight,
             )
 
             is_physics_active = (not freeze_backbone) and (
@@ -381,14 +428,24 @@ def finetune(
                     pred_energy = physics_out["energy"]
                     pred_forces = physics_out["forces"]
 
+                # Apply force residual correction if available
+                if force_residual_head is not None:
+                    force_correction = force_residual_head(node_features.detach())
+                    pred_forces = pred_forces + force_correction
+
                 true_energy = batch.system_targets["energy"]
                 true_forces = batch.node_targets["forces"]
 
                 energy_loss = torch.nn.functional.mse_loss(pred_energy, true_energy)
-                forces_loss = torch.nn.functional.mse_loss(pred_forces, true_forces)
+                forces_loss, force_diag = compute_force_loss(
+                    pred_forces, true_forces,
+                    std_forces=std_forces,
+                    huber_delta=force_huber_delta,
+                )
             else:
                 energy_loss = torch.tensor(0.0, device=device)
                 forces_loss = torch.tensor(0.0, device=device)
+                force_diag = {}
 
             total_loss = (
                 (energy_loss_weight * energy_loss)
@@ -406,6 +463,9 @@ def finetune(
             if is_physics_active:
                 batch_outputs["loss/energy"] = energy_loss.detach()
                 batch_outputs["loss/forces"] = forces_loss.detach()
+            # Force diagnostics as plain floats
+            for k, v in force_diag.items():
+                batch_outputs[f"forces/{k}"] = torch.tensor(v)
             window_metrics.update(batch_outputs)
             epoch_metrics.update(batch_outputs)
 
@@ -430,6 +490,9 @@ def finetune(
                     "grad_norm/weight_head": w_head_gnorm.detach(),
                     "grad_norm/attention_pool": attn_pool_gnorm.detach(),
                 }
+                if force_residual_head is not None:
+                    force_head_gnorm = torch.nn.utils.clip_grad_norm_(force_residual_head.parameters(), clip_grad)
+                    grad_metrics["grad_norm/force_residual_head"] = force_head_gnorm.detach()
                 window_metrics.update(grad_metrics)
                 epoch_metrics.update(grad_metrics)
 
@@ -442,6 +505,12 @@ def finetune(
 
         if i % log_freq == 0:
             metrics_dict = window_metrics.get_metrics()
+            loss_summary = ", ".join(f"{k}: {v:.4f}" for k, v in metrics_dict.items() if "loss/" in k)
+            forces_summary = ", ".join(f"{k}: {v:.4f}" for k, v in metrics_dict.items() if "forces/" in k)
+            log_msg = f"Epoch {epoch} [Step {i}/{num_training_batches}] — {loss_summary}"
+            if forces_summary:
+                log_msg += f" | {forces_summary}"
+            logging.info(log_msg)
             if run_handle is not None:
                 step = (epoch * num_training_batches) + i
                 if run_handle.sweep_id is not None:
@@ -466,12 +535,15 @@ def evaluate_model(
     couple_heads: bool = False,
     mean_eigenvalues: torch.Tensor | None = None,
     std_eigenvalues: torch.Tensor | None = None,
+    force_residual_head: ForceResidualHead | None = None,
 ) -> dict[str, float]:
     """Evaluate current model checkpoint on cached validation frames."""
     model.eval()
     eigenvalue_head.eval()
     weight_head.eval()
     attention_pool.eval()
+    if force_residual_head is not None:
+        force_residual_head.eval()
 
     results: dict[str, list[Any]] = {
         "forces_true": [], "forces_pred": [],
@@ -490,24 +562,29 @@ def evaluate_model(
         if "spin_multiplicity" not in inputs.system_features:
             inputs.system_features["spin_multiplicity"] = torch.tensor([1.0], dtype=torch.float32, device=device)
 
-        if not fast_eval:
-            if is_conservative_model:
-                with torch.set_grad_enabled(True):
-                    inputs.positions.requires_grad_(True)
-                    base_out = model(inputs)
-                    pred_forces = base_out["grad_forces"]
-            else:
-                with torch.no_grad():
-                    base_out = model(inputs)
-                    pred_forces = base_out["forces"]
-
-            results["forces_true"].append(gt["forces"])
-            results["forces_pred"].append(pred_forces.detach().cpu().numpy())
+        if is_conservative_model:
+            with torch.set_grad_enabled(True):
+                inputs.positions.requires_grad_(True)
+                base_out = model(inputs)
+                pred_forces = base_out["grad_forces"]
+        else:
+            with torch.no_grad():
+                base_out = model(inputs)
+                pred_forces = base_out["forces"]
 
         with torch.no_grad():
             gnn_out = model.model(inputs)
             node_feats = gnn_out["node_features"]
 
+            # Apply force residual correction if available
+            if force_residual_head is not None:
+                force_correction = force_residual_head(node_feats)
+                pred_forces = pred_forces + force_correction
+
+        results["forces_true"].append(gt["forces"])
+        results["forces_pred"].append(pred_forces.detach().cpu().numpy())
+
+        with torch.no_grad():
             graph_idx = build_graph_index(inputs.n_node, node_feats.device)
             graph_feats = attention_pool(node_feats, graph_idx)
 
@@ -530,35 +607,39 @@ def evaluate_model(
             results["weights_true"].append(np.array(gt["weights"]).flatten())
             results["weights_pred"].append(pred_weights)
 
-    if not fast_eval:
-        f_true = np.concatenate(results["forces_true"]).flatten()
-        f_pred = np.concatenate(results["forces_pred"]).flatten()
-        forces_rmse = float(np.sqrt(np.mean((f_true - f_pred) ** 2)))
-    else:
-        forces_rmse = float("nan")
+    f_true = np.concatenate(results["forces_true"]).flatten()
+    f_pred = np.concatenate(results["forces_pred"]).flatten()
+    forces_rmse = float(np.sqrt(np.mean((f_true - f_pred) ** 2)))
+    forces_var = np.var(f_true)
+    forces_r2 = float(1.0 - np.mean((f_true - f_pred) ** 2) / forces_var) if forces_var > 1e-8 else 0.0
 
     eig_true = np.array(results["eigs_true"]).flatten()
     eig_pred = np.array(results["eigs_pred"]).flatten()
     eigs_rmse = float(np.sqrt(np.mean((eig_true - eig_pred) ** 2)))
+    eig_var = np.var(eig_true)
+    eigs_r2 = float(1.0 - np.mean((eig_true - eig_pred) ** 2) / eig_var) if eig_var > 1e-8 else 0.0
 
     w_true = np.concatenate(results["weights_true"])
     w_pred = np.concatenate(results["weights_pred"])
     weights_rmse = float(np.sqrt(np.mean((w_true - w_pred) ** 2)))
+    w_var = np.var(w_true)
+    weights_r2 = float(1.0 - np.mean((w_true - w_pred) ** 2) / w_var) if w_var > 1e-8 else 0.0
 
     if plot_path is not None:
         _save_parity_plots(
             eig_true, eig_pred, eigs_rmse,
             w_true, w_pred, weights_rmse,
-            f_true if not fast_eval else None,
-            f_pred if not fast_eval else None,
-            forces_rmse,
+            f_true, f_pred, forces_rmse,
             plot_path,
         )
 
     return {
         "forces_rmse": forces_rmse,
+        "forces_r2": forces_r2,
         "eigs_rmse": eigs_rmse,
+        "eigs_r2": eigs_r2,
         "weights_rmse": weights_rmse,
+        "weights_r2": weights_r2,
     }
 
 
