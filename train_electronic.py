@@ -506,6 +506,107 @@ def extract_weights(row, dataset=None):
     """Return the per-atom 250-band PDOS weight vector for a structure as float32."""
     return torch.tensor(row.data["weights"], dtype=torch.float32)
 
+def evaluate_model(model, eigenvalue_head, weight_head, atoms_adapter, eval_frames, device, plot_path=None):
+    """Evaluate current model checkpoint on cached validation frames."""
+    model.eval()
+    eigenvalue_head.eval()
+    weight_head.eval()
+
+    results = {
+        "forces_true": [], "forces_pred": [],
+        "eigs_true": [], "eigs_pred": [],
+        "weights_true": [], "weights_pred": []
+    }
+
+    is_conservative = model.__class__.__name__ == "ConservativeForcefieldRegressor"
+
+    for single_graph, gt in eval_frames:
+        inputs = atoms_adapter.batch([single_graph]).to(device)
+        inputs.system_features = {
+            "total_charge": torch.tensor([0.0], dtype=torch.float32, device=device),
+            "spin_multiplicity": torch.tensor([1.0], dtype=torch.float32, device=device),
+            "cell": torch.tensor(gt["cell"], dtype=torch.float32, device=device).unsqueeze(0)
+        }
+
+        # 1. Physics Evaluation (Forces)
+        if is_conservative:
+            with torch.set_grad_enabled(True):
+                inputs.positions.requires_grad_(True)
+                base_out = model(inputs)
+                pred_forces = base_out["grad_forces"]
+        else:
+            with torch.no_grad():
+                base_out = model(inputs)
+                pred_forces = base_out["forces"]
+
+        results["forces_true"].append(gt["forces"])
+        results["forces_pred"].append(pred_forces.detach().cpu().numpy())
+
+        # 2. Electronic Structure Evaluation (Eigenvalues & PDOS Weights)
+        with torch.no_grad():
+            gnn_out = model.model(inputs)
+            node_feats = gnn_out["node_features"]
+            graph_feats = node_feats.mean(dim=0, keepdim=True)
+
+            pred_eigs = eigenvalue_head(graph_feats).cpu().numpy().flatten()
+            pred_weights = weight_head(node_feats).cpu().numpy().flatten()
+
+            results["eigs_true"].append(gt["eigenvalues"])
+            results["eigs_pred"].append(pred_eigs)
+            results["weights_true"].append(np.array(gt["weights"]).flatten())
+            results["weights_pred"].append(pred_weights)
+
+    # Calculate RMSE
+    f_true = np.concatenate(results["forces_true"]).flatten()
+    f_pred = np.concatenate(results["forces_pred"]).flatten()
+    forces_rmse = np.sqrt(np.mean((f_true - f_pred)**2))
+
+    eig_true = np.array(results["eigs_true"]).flatten()
+    eig_pred = np.array(results["eigs_pred"]).flatten()
+    eigs_rmse = np.sqrt(np.mean((eig_true - eig_pred)**2))
+
+    w_true = np.concatenate(results["weights_true"])
+    w_pred = np.concatenate(results["weights_pred"])
+    weights_rmse = np.sqrt(np.mean((w_true - w_pred)**2))
+
+    if plot_path is not None:
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(1, 3, figsize=(18, 5))
+        
+        # 1. Eigenvalues Parity Plot
+        ax[0].scatter(eig_true, eig_pred, alpha=0.1, s=0.5)
+        ax[0].plot([eig_true.min(), eig_true.max()], [eig_true.min(), eig_true.max()], 'r--')
+        ax[0].set_title(f"Eigenvalues (RMSE: {eigs_rmse:.3f} eV)")
+        ax[0].set_xlabel("DFT Eigenvalues (eV)")
+        ax[0].set_ylabel("ML Predicted (eV)")
+        
+        # 2. PDOS Weights Parity Plot
+        ax[1].scatter(w_true, w_pred, alpha=0.1, s=0.5)
+        ax[1].plot([w_true.min(), w_true.max()], [w_true.min(), w_true.max()], 'r--')
+        ax[1].set_title(f"PDOS Weights (RMSE: {weights_rmse:.3f})")
+        ax[1].set_xlabel("DFT PDOS Weights")
+        ax[1].set_ylabel("ML Predicted")
+        
+        # 3. Forces Parity Plot
+        ax[2].scatter(f_true, f_pred, alpha=0.3, s=1)
+        ax[2].plot([f_true.min(), f_true.max()], [f_true.min(), f_true.max()], 'r--')
+        ax[2].set_title(f"Forces (RMSE: {forces_rmse:.3f} eV/Å)")
+        ax[2].set_xlabel("DFT Forces (eV/Å)")
+        ax[2].set_ylabel("ML Predicted (eV/Å)")
+        
+        plt.tight_layout()
+        os.makedirs(os.path.dirname(plot_path), exist_ok=True)
+        plt.savefig(plot_path)
+        plt.close(fig)
+        logging.info(f"Saved parity plot to {plot_path}")
+
+    return {
+        "forces_rmse": forces_rmse,
+        "eigs_rmse": eigs_rmse,
+        "weights_rmse": weights_rmse
+    }
+
+
 def run(args):
     """Training Loop.
 
@@ -767,6 +868,29 @@ def run(args):
         atoms_adapter=atoms_adapter,
         augmentation=True,
     )
+    
+    # Preprocess and cache validation database frames for training evaluation
+    eval_frames = []
+    if args.eval_every_x_epochs > 0:
+        logging.info("Preprocessing and caching database frames for evaluation...")
+        import ase.db
+        db = ase.db.connect(args.data_path)
+        for row in db.select():
+            test_atoms = row.toatoms()
+            single_graph = atoms_adapter.from_ase_atoms(test_atoms)
+            gt = {
+                "energy": row.energy if hasattr(row, "energy") else None,
+                "forces": row.forces if hasattr(row, "forces") else None,
+                "eigenvalues": row.data.get("eigenvalues") if "eigenvalues" in row.data else None,
+                "weights": row.data.get("weights") if "weights" in row.data else None,
+                "cell": test_atoms.get_cell().array
+            }
+            eval_frames.append((single_graph, gt))
+        logging.info(f"Cached {len(eval_frames)} frames for evaluation.")
+
+    best_monitored_val = None
+    patience_counter = 0
+
     logging.info("Starting training!")
 
     num_steps = args.num_steps if args.num_steps > 0 else None
@@ -864,6 +988,66 @@ def run(args):
                 lr_scheduler.step()
                 logging.info("Stepped CosineAnnealingLR.")
 
+        # Determine if we should save checkpoint at this epoch
+        is_ckpt_epoch = (epoch % args.save_every_x_epochs == 0) or (epoch == args.max_epochs - 1)
+
+        # Periodical evaluation and early stopping checks
+        if args.eval_every_x_epochs > 0 and (epoch % args.eval_every_x_epochs == 0 or epoch == args.max_epochs - 1):
+            plot_path = None
+            if is_ckpt_epoch:
+                plot_path = os.path.join(args.checkpoint_path, f"cellulose__epoch{epoch}.png")
+
+            eval_metrics = evaluate_model(
+                model=model,
+                eigenvalue_head=eigenvalue_head,
+                weight_head=weight_head,
+                atoms_adapter=atoms_adapter,
+                eval_frames=eval_frames,
+                device=device,
+                plot_path=plot_path
+            )
+            logging.info("=" * 60)
+            logging.info(f"Epoch {epoch} Evaluation Metrics:")
+            logging.info(f"  Eigenvalues RMSE: {eval_metrics['eigs_rmse']:.4f} eV")
+            logging.info(f"  Weights RMSE:     {eval_metrics['weights_rmse']:.4f}")
+            logging.info(f"  Forces RMSE:      {eval_metrics['forces_rmse']:.4f} eV/Å")
+            logging.info("=" * 60)
+            
+            # Log to wandb if enabled
+            if wandb_run is not None:
+                wandb_run.log({
+                    "eval/eigs_rmse": eval_metrics["eigs_rmse"],
+                    "eval/weights_rmse": eval_metrics["weights_rmse"],
+                    "eval/forces_rmse": eval_metrics["forces_rmse"],
+                    "epoch": epoch
+                })
+
+            # Metrics explosion safety check (only active once GNN backbone is unfrozen)
+            is_unfrozen = args.unfreeze_epoch is None or epoch >= args.unfreeze_epoch
+            if is_unfrozen and (eval_metrics['eigs_rmse'] > 5.0 or eval_metrics['forces_rmse'] > 2.0):
+                logging.warning("Exploding metrics detected! Terminating training run early.")
+                break
+
+            # Early stopping check
+            if args.early_stopping_patience > 0:
+                monitored_val = eval_metrics[args.early_stopping_metric]
+                
+                if best_monitored_val is None or monitored_val < best_monitored_val:
+                    best_monitored_val = monitored_val
+                    patience_counter = 0
+                    logging.info(f"New best {args.early_stopping_metric}: {best_monitored_val:.4f}. Resetting patience counter.")
+                else:
+                    # Only increment patience counter if we are at or past the unfreeze_epoch
+                    if args.unfreeze_epoch is None or epoch >= args.unfreeze_epoch:
+                        patience_counter += 1
+                        logging.info(f"{args.early_stopping_metric} did not improve. Patience: {patience_counter}/{args.early_stopping_patience}")
+                        
+                        if patience_counter >= args.early_stopping_patience:
+                            logging.warning(f"Early stopping triggered! {args.early_stopping_metric} did not improve for {args.early_stopping_patience} evaluations.")
+                            break
+                    else:
+                        logging.info(f"Patience counter not incremented because epoch {epoch} < unfreeze_epoch {args.unfreeze_epoch}.")
+
         # Save every X epochs and final epoch
         if (epoch % args.save_every_x_epochs == 0) or (epoch == args.max_epochs - 1):
             if not os.path.exists(args.checkpoint_path):
@@ -926,6 +1110,9 @@ def main():
     parser.add_argument("--weight_head_noise_interval", default=5, type=int, help="Epoch interval at which noise is injected into weight_head.")
     parser.add_argument("--eigenvalue_loss_weight", default=0.02, type=float, help="Loss weight scaling factor for eigenvalues.")
     parser.add_argument("--weight_loss_weight", default=1.0, type=float, help="Loss weight scaling factor for PDOS weights.")
+    parser.add_argument("--eval_every_x_epochs", default=1, type=int, help="Frequency of running evaluation on cached database frames. Set to 0 to disable.")
+    parser.add_argument("--early_stopping_patience", default=5, type=int, help="Patience (in evaluations) for early stopping. Set to 0 to disable.")
+    parser.add_argument("--early_stopping_metric", default="forces_rmse", choices=["forces_rmse", "eigs_rmse", "weights_rmse"], help="Metric to monitor for early stopping.")
 
     args = parser.parse_args()
     run(args)

@@ -17,4 +17,7 @@ uv run python train_electronic.py \
   --weight_head_noise_interval 2 \
   --batch_size 1 \
   --num_steps 0 \
-  --max_epochs 41 
+  --eval_every_x_epochs 1 \
+  --early_stopping_patience 5 \
+  --early_stopping_metric forces_rmse \
+  --max_epochs 21 
