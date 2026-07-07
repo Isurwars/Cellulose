@@ -310,6 +310,7 @@ def run(args: argparse.Namespace) -> None:
             pdos_peak_boost=args.pdos_peak_boost,
             pdos_active_threshold=args.pdos_active_threshold,
             pdos_magnitude_weight=args.pdos_magnitude_weight,
+            pdos_cramer_weight=args.pdos_cramer_weight,
             couple_heads=args.couple_heads,
             detach_coupling=args.detach_coupling,
             mean_eigenvalues=mean_eigenvalues,
@@ -441,6 +442,7 @@ def main() -> None:
     parser.add_argument("--unfreeze_epoch", default=None, type=int, help="Epoch at which to unfreeze the GNN backbone.")
     parser.add_argument("--scheduler", default="cosine", choices=["none", "cosine", "flat_cosine", "plateau"], help="Learning rate scheduler to use (stepped once per epoch).")
     parser.add_argument("--min_lr", default=1e-6, type=float, help="Minimum learning rate for the scheduler.")
+    parser.add_argument("--warmup_epochs", default=1, type=int, help="Number of epochs for linear LR warmup (0 to disable).")
     parser.add_argument("--weight_head_noise_std", default=0.0, type=float, help="Standard deviation of noise to inject into weight_head parameters to break false minima.")
     parser.add_argument("--weight_head_noise_interval", default=5, type=int, help="Epoch interval at which noise is injected into weight_head.")
     parser.add_argument("--eigenvalue_loss_weight", default=0.02, type=float, help="Loss weight scaling factor for eigenvalues.")

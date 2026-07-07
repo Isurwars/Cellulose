@@ -15,8 +15,9 @@ uv run python train_electronic.py \
   --min_lr 1e-5 \
   --weight_head_noise_std 5e-5 \
   --weight_head_noise_interval 2 \
-  --batch_size 1 \
+  --batch_size 4 \
   --num_steps 0 \
   --eval_every_x_epochs 1 \
   --max_epochs 101 \
+  --warmup_epochs 1 \
   --normalize_eigenvalues

@@ -96,51 +96,75 @@ def build_scheduler(
     total_epochs: int,
     unfreeze_offset: int | None = None,
 ) -> tuple[torch.optim.lr_scheduler._LRScheduler | None, int | None]:
-    """Build the learning-rate scheduler."""
+    """Build the learning-rate scheduler.
+
+    When ``args.warmup_epochs`` > 0, prepends a linear warmup ramp to
+    whatever base schedule is selected.
+    """
     cosine_start_epoch: int | None = None
+    warmup_epochs: int = getattr(args, "warmup_epochs", 0)
 
     if args.scheduler == "cosine":
         logging.info("Initializing CosineAnnealingLR scheduler.")
-        lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-            optimizer, T_max=total_epochs, eta_min=args.min_lr
+        base_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=max(1, total_epochs - warmup_epochs), eta_min=args.min_lr
         )
-        cosine_start_epoch = 0
+        cosine_start_epoch = warmup_epochs
 
     elif args.scheduler == "flat_cosine":
         logging.info("Initializing Flat-Cosine (SequentialLR) scheduler.")
-        T_flat = total_epochs // 2
+        T_flat = (total_epochs - warmup_epochs) // 2
 
         if unfreeze_offset is not None:
-            cosine_start_epoch = unfreeze_offset + (total_epochs - unfreeze_offset) // 2
+            cosine_start_epoch = warmup_epochs + unfreeze_offset + (total_epochs - warmup_epochs - unfreeze_offset) // 2
         else:
-            cosine_start_epoch = total_epochs // 2
+            cosine_start_epoch = warmup_epochs + (total_epochs - warmup_epochs) // 2
 
         if T_flat > 0:
             scheduler1 = torch.optim.lr_scheduler.ConstantLR(
                 optimizer, factor=1.0, total_iters=T_flat
             )
             scheduler2 = torch.optim.lr_scheduler.CosineAnnealingLR(
-                optimizer, T_max=total_epochs - T_flat, eta_min=args.min_lr
+                optimizer, T_max=max(1, total_epochs - warmup_epochs - T_flat), eta_min=args.min_lr
             )
-            lr_scheduler = torch.optim.lr_scheduler.SequentialLR(
+            base_scheduler = torch.optim.lr_scheduler.SequentialLR(
                 optimizer, schedulers=[scheduler1, scheduler2], milestones=[T_flat]
             )
         else:
-            lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-                optimizer, T_max=total_epochs, eta_min=args.min_lr
+            base_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+                optimizer, T_max=max(1, total_epochs - warmup_epochs), eta_min=args.min_lr
             )
 
     elif args.scheduler == "plateau":
         logging.info("Initializing ReduceLROnPlateau scheduler (stepped per epoch).")
-        lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        base_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer, mode="min", factor=0.5, patience=3, min_lr=args.min_lr
         )
         cosine_start_epoch = None
 
     else:
         logging.info("No learning rate scheduler specified (constant learning rate).")
-        lr_scheduler = None
+        base_scheduler = None
         cosine_start_epoch = None
+
+    # Prepend linear warmup if requested
+    if warmup_epochs > 0 and base_scheduler is not None:
+        if isinstance(base_scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+            # ReduceLROnPlateau can't be composed with SequentialLR; skip warmup
+            logging.warning("Warmup is not supported with ReduceLROnPlateau. Skipping warmup.")
+            lr_scheduler = base_scheduler
+        else:
+            logging.info(f"Prepending {warmup_epochs}-epoch linear warmup to scheduler.")
+            warmup_scheduler = torch.optim.lr_scheduler.LinearLR(
+                optimizer, start_factor=1e-2, end_factor=1.0, total_iters=warmup_epochs
+            )
+            lr_scheduler = torch.optim.lr_scheduler.SequentialLR(
+                optimizer,
+                schedulers=[warmup_scheduler, base_scheduler],
+                milestones=[warmup_epochs],
+            )
+    else:
+        lr_scheduler = base_scheduler
 
     return lr_scheduler, cosine_start_epoch
 
@@ -261,7 +285,10 @@ def finetune(
 ) -> dict[str, float]:
     """Run one epoch of electronic-structure finetuning."""
     run_handle: Any | None = wandb.run if WANDB_AVAILABLE else None
-    metrics = ScalarMetricTracker()
+    # Two trackers: window_metrics for periodic logging, epoch_metrics for
+    # the full-epoch average returned at the end.
+    window_metrics = ScalarMetricTracker()
+    epoch_metrics = ScalarMetricTracker()
 
     if freeze_backbone:
         model.eval()
@@ -282,12 +309,16 @@ def finetune(
 
     batch_generator_tqdm = tqdm.tqdm(iter(dataloader), total=num_training_batches)
 
+    # Track how many valid backward passes have been accumulated since the
+    # last optimizer step so NaN-skipped batches don't trigger premature steps.
+    valid_accum_count = 0
+
     for i, batch in enumerate(batch_generator_tqdm):
         if num_steps and i == num_steps:
             break
 
         if i % log_freq == 0:
-            metrics.reset()
+            window_metrics.reset()
 
         batch = batch.to(device)
 
@@ -375,35 +406,42 @@ def finetune(
             if is_physics_active:
                 batch_outputs["loss/energy"] = energy_loss.detach()
                 batch_outputs["loss/forces"] = forces_loss.detach()
-            metrics.update(batch_outputs)
+            window_metrics.update(batch_outputs)
+            epoch_metrics.update(batch_outputs)
 
+        # NaN guard: skip backward *before* calling it so that previously
+        # accumulated (valid) gradients are preserved for the next step.
         if torch.isnan(scaled_loss):
-            logging.warning(f"NaN scaled_loss at step {i}. Skipping batch.")
-            optimizer.zero_grad(set_to_none=True)
+            logging.warning(f"NaN scaled_loss at step {i}. Skipping backward for this batch.")
             continue
 
         scaled_loss.backward()
+        valid_accum_count += 1
 
-        if (i + 1) % accumulation_steps == 0 or (i + 1) == num_training_batches:
+        if valid_accum_count >= accumulation_steps or (i + 1) == num_training_batches:
             if clip_grad is not None:
                 backbone_gnorm = torch.nn.utils.clip_grad_norm_(model.parameters(), clip_grad)
                 eig_head_gnorm = torch.nn.utils.clip_grad_norm_(eigenvalue_head.parameters(), clip_grad)
                 w_head_gnorm = torch.nn.utils.clip_grad_norm_(weight_head.parameters(), clip_grad)
                 attn_pool_gnorm = torch.nn.utils.clip_grad_norm_(attention_pool.parameters(), clip_grad)
-                metrics.update({
+                grad_metrics = {
                     "grad_norm/backbone": backbone_gnorm.detach(),
                     "grad_norm/eigenvalue_head": eig_head_gnorm.detach(),
                     "grad_norm/weight_head": w_head_gnorm.detach(),
                     "grad_norm/attention_pool": attn_pool_gnorm.detach(),
-                })
+                }
+                window_metrics.update(grad_metrics)
+                epoch_metrics.update(grad_metrics)
 
             optimizer.step()
             optimizer.zero_grad(set_to_none=True)
+            valid_accum_count = 0
 
-        metrics.update(step_metrics)
+        window_metrics.update(step_metrics)
+        epoch_metrics.update(step_metrics)
 
-        if i != 0 and i % log_freq == 0:
-            metrics_dict = metrics.get_metrics()
+        if i % log_freq == 0:
+            metrics_dict = window_metrics.get_metrics()
             if run_handle is not None:
                 step = (epoch * num_training_batches) + i
                 if run_handle.sweep_id is not None:
@@ -411,7 +449,7 @@ def finetune(
                 run_handle.log({"step": step}, commit=False)
                 run_handle.log(prefix_keys(metrics_dict, "finetune_step"), commit=True)
 
-    return metrics.get_metrics()
+    return epoch_metrics.get_metrics()
 
 
 def evaluate_model(

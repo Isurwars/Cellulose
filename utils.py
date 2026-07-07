@@ -3,17 +3,30 @@ from typing import Any
 import numpy as np
 import torch
 
-def scatter_mean(src: torch.Tensor, index: torch.Tensor, dim: int = 0) -> torch.Tensor:
-    """Computes the mean values of all elements in the src tensor grouped by index.
+def scatter_sum(src: torch.Tensor, index: torch.Tensor, dim: int = 0) -> torch.Tensor:
+    """Computes the sum of all elements in the src tensor grouped by index.
 
-    Equivalent to torch_scatter.scatter_mean.
+    Equivalent to torch_scatter.scatter_add.
     """
     dim_size = int(index.max().item()) + 1
     out = src.new_zeros((dim_size, src.size(1)))
     out.index_add_(dim, index, src)
-    count = src.new_zeros((dim_size, src.size(1)))
-    count.index_add_(dim, index, torch.ones_like(src))
-    return out / count.clamp(min=1)
+    return out
+
+
+def scatter_mean(src: torch.Tensor, index: torch.Tensor, dim: int = 0) -> torch.Tensor:
+    """Computes the mean values of all elements in the src tensor grouped by index.
+
+    Equivalent to torch_scatter.scatter_mean.  Uses integer counts for
+    numerical stability on large graphs.
+    """
+    dim_size = int(index.max().item()) + 1
+    out = src.new_zeros((dim_size, src.size(1)))
+    out.index_add_(dim, index, src)
+    # Integer counts avoid float rounding drift
+    count = torch.zeros(dim_size, dtype=torch.long, device=src.device)
+    count.scatter_add_(0, index, torch.ones_like(index, dtype=torch.long))
+    return out / count.unsqueeze(1).clamp(min=1).to(out.dtype)
 
 
 def prefix_keys(dict_to_prefix: dict[str, Any], prefix: str, sep: str = "/") -> dict[str, Any]:
