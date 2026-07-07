@@ -506,7 +506,7 @@ def extract_weights(row, dataset=None):
     """Return the per-atom 250-band PDOS weight vector for a structure as float32."""
     return torch.tensor(row.data["weights"], dtype=torch.float32)
 
-def evaluate_model(model, eigenvalue_head, weight_head, atoms_adapter, eval_frames, device, plot_path=None):
+def evaluate_model(model, eigenvalue_head, weight_head, atoms_adapter, eval_frames, device, plot_path=None, fast_eval=False):
     """Evaluate current model checkpoint on cached validation frames."""
     model.eval()
     eigenvalue_head.eval()
@@ -520,7 +520,9 @@ def evaluate_model(model, eigenvalue_head, weight_head, atoms_adapter, eval_fram
 
     is_conservative = model.__class__.__name__ == "ConservativeForcefieldRegressor"
 
-    for single_graph, gt in eval_frames:
+    frames_to_eval = eval_frames[:100] if fast_eval else eval_frames
+
+    for single_graph, gt in frames_to_eval:
         inputs = atoms_adapter.batch([single_graph]).to(device)
         inputs.system_features = {
             "total_charge": torch.tensor([0.0], dtype=torch.float32, device=device),
@@ -529,18 +531,19 @@ def evaluate_model(model, eigenvalue_head, weight_head, atoms_adapter, eval_fram
         }
 
         # 1. Physics Evaluation (Forces)
-        if is_conservative:
-            with torch.set_grad_enabled(True):
-                inputs.positions.requires_grad_(True)
-                base_out = model(inputs)
-                pred_forces = base_out["grad_forces"]
-        else:
-            with torch.no_grad():
-                base_out = model(inputs)
-                pred_forces = base_out["forces"]
+        if not fast_eval:
+            if is_conservative:
+                with torch.set_grad_enabled(True):
+                    inputs.positions.requires_grad_(True)
+                    base_out = model(inputs)
+                    pred_forces = base_out["grad_forces"]
+            else:
+                with torch.no_grad():
+                    base_out = model(inputs)
+                    pred_forces = base_out["forces"]
 
-        results["forces_true"].append(gt["forces"])
-        results["forces_pred"].append(pred_forces.detach().cpu().numpy())
+            results["forces_true"].append(gt["forces"])
+            results["forces_pred"].append(pred_forces.detach().cpu().numpy())
 
         # 2. Electronic Structure Evaluation (Eigenvalues & PDOS Weights)
         with torch.no_grad():
@@ -557,9 +560,12 @@ def evaluate_model(model, eigenvalue_head, weight_head, atoms_adapter, eval_fram
             results["weights_pred"].append(pred_weights)
 
     # Calculate RMSE
-    f_true = np.concatenate(results["forces_true"]).flatten()
-    f_pred = np.concatenate(results["forces_pred"]).flatten()
-    forces_rmse = np.sqrt(np.mean((f_true - f_pred)**2))
+    if not fast_eval:
+        f_true = np.concatenate(results["forces_true"]).flatten()
+        f_pred = np.concatenate(results["forces_pred"]).flatten()
+        forces_rmse = np.sqrt(np.mean((f_true - f_pred)**2))
+    else:
+        forces_rmse = float('nan')
 
     eig_true = np.array(results["eigs_true"]).flatten()
     eig_pred = np.array(results["eigs_pred"]).flatten()
@@ -888,9 +894,6 @@ def run(args):
             eval_frames.append((single_graph, gt))
         logging.info(f"Cached {len(eval_frames)} frames for evaluation.")
 
-    best_monitored_val = None
-    patience_counter = 0
-
     logging.info("Starting training!")
 
     num_steps = args.num_steps if args.num_steps > 0 else None
@@ -991,7 +994,7 @@ def run(args):
         # Determine if we should save checkpoint at this epoch
         is_ckpt_epoch = (epoch % args.save_every_x_epochs == 0) or (epoch == args.max_epochs - 1)
 
-        # Periodical evaluation and early stopping checks
+        # Periodical evaluation and validation checks
         if args.eval_every_x_epochs > 0 and (epoch % args.eval_every_x_epochs == 0 or epoch == args.max_epochs - 1):
             plot_path = None
             if is_ckpt_epoch:
@@ -1004,13 +1007,15 @@ def run(args):
                 atoms_adapter=atoms_adapter,
                 eval_frames=eval_frames,
                 device=device,
-                plot_path=plot_path
+                plot_path=plot_path,
+                fast_eval=not is_ckpt_epoch
             )
             logging.info("=" * 60)
             logging.info(f"Epoch {epoch} Evaluation Metrics:")
             logging.info(f"  Eigenvalues RMSE: {eval_metrics['eigs_rmse']:.4f} eV")
             logging.info(f"  Weights RMSE:     {eval_metrics['weights_rmse']:.4f}")
-            logging.info(f"  Forces RMSE:      {eval_metrics['forces_rmse']:.4f} eV/Å")
+            forces_rmse_str = f"{eval_metrics['forces_rmse']:.4f} eV/Å" if not np.isnan(eval_metrics['forces_rmse']) else "N/A (fast eval)"
+            logging.info(f"  Forces RMSE:      {forces_rmse_str}")
             logging.info("=" * 60)
             
             # Log to wandb if enabled
@@ -1024,29 +1029,11 @@ def run(args):
 
             # Metrics explosion safety check (only active once GNN backbone is unfrozen)
             is_unfrozen = args.unfreeze_epoch is None or epoch >= args.unfreeze_epoch
-            if is_unfrozen and (eval_metrics['eigs_rmse'] > 5.0 or eval_metrics['forces_rmse'] > 2.0):
+            exploding_eigs = eval_metrics['eigs_rmse'] > 5.0
+            exploding_forces = not np.isnan(eval_metrics['forces_rmse']) and eval_metrics['forces_rmse'] > 2.0
+            if is_unfrozen and (exploding_eigs or exploding_forces):
                 logging.warning("Exploding metrics detected! Terminating training run early.")
                 break
-
-            # Early stopping check
-            if args.early_stopping_patience > 0:
-                monitored_val = eval_metrics[args.early_stopping_metric]
-                
-                if best_monitored_val is None or monitored_val < best_monitored_val:
-                    best_monitored_val = monitored_val
-                    patience_counter = 0
-                    logging.info(f"New best {args.early_stopping_metric}: {best_monitored_val:.4f}. Resetting patience counter.")
-                else:
-                    # Only increment patience counter if we are at or past the unfreeze_epoch
-                    if args.unfreeze_epoch is None or epoch >= args.unfreeze_epoch:
-                        patience_counter += 1
-                        logging.info(f"{args.early_stopping_metric} did not improve. Patience: {patience_counter}/{args.early_stopping_patience}")
-                        
-                        if patience_counter >= args.early_stopping_patience:
-                            logging.warning(f"Early stopping triggered! {args.early_stopping_metric} did not improve for {args.early_stopping_patience} evaluations.")
-                            break
-                    else:
-                        logging.info(f"Patience counter not incremented because epoch {epoch} < unfreeze_epoch {args.unfreeze_epoch}.")
 
         # Save every X epochs and final epoch
         if (epoch % args.save_every_x_epochs == 0) or (epoch == args.max_epochs - 1):
@@ -1111,10 +1098,8 @@ def main():
     parser.add_argument("--eigenvalue_loss_weight", default=0.02, type=float, help="Loss weight scaling factor for eigenvalues.")
     parser.add_argument("--weight_loss_weight", default=1.0, type=float, help="Loss weight scaling factor for PDOS weights.")
     parser.add_argument("--eval_every_x_epochs", default=1, type=int, help="Frequency of running evaluation on cached database frames. Set to 0 to disable.")
-    parser.add_argument("--early_stopping_patience", default=5, type=int, help="Patience (in evaluations) for early stopping. Set to 0 to disable.")
-    parser.add_argument("--early_stopping_metric", default="forces_rmse", choices=["forces_rmse", "eigs_rmse", "weights_rmse"], help="Metric to monitor for early stopping.")
 
-    args = parser.parse_args()
+    args, _ = parser.parse_known_args()
     run(args)
 
 

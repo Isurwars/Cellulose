@@ -5,7 +5,6 @@ uv run python train_electronic.py \
   --custom_reference_energies refs.json \
   --energy_loss_weight 0.01 \
   --forces_loss_weight 30.0 \
-  --stress_loss_weight 0.0 \
   --eigenvalue_loss_weight 0.02 \
   --weight_loss_weight 50.0 \
   --scheduler flat_cosine \
@@ -18,6 +17,4 @@ uv run python train_electronic.py \
   --batch_size 1 \
   --num_steps 0 \
   --eval_every_x_epochs 1 \
-  --early_stopping_patience 5 \
-  --early_stopping_metric forces_rmse \
-  --max_epochs 21 
+  --max_epochs 201 
