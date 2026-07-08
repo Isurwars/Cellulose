@@ -93,31 +93,32 @@ def build_optimizer(
     force_residual_head: ForceResidualHead | None = None,
     uncertainty_weighting: nn.Module | None = None,
 ) -> torch.optim.Optimizer:
-    """Build the Adam optimizer with per-group learning rates."""
-    include_backbone = (not args.freeze_backbone) or (args.unfreeze_epoch is not None)
+    """Build the Adam optimizer with two parameter groups: backbone and heads."""
     params: list[dict[str, Any]] = []
 
+    # 1. GNN Backbone group
+    include_backbone = (not args.freeze_backbone) or (args.unfreeze_epoch is not None)
     if include_backbone:
         init_backbone_lr = (
             0.0 if (args.freeze_backbone and args.unfreeze_epoch is not None) else args.backbone_lr
         )
         logging.info(f"Including GNN backbone in optimizer with initial LR: {init_backbone_lr}")
-
-        for name, param in model.named_parameters():
-            if re.search(r"(.*bias|.*layer_norm.*|.*batch_norm.*)", name):
-                params.append({"params": param, "weight_decay": 0.0, "lr": init_backbone_lr})
-            else:
-                params.append({"params": param, "lr": init_backbone_lr})
+        params.append({"params": list(model.parameters()), "lr": init_backbone_lr})
     else:
         logging.info("Excluding GNN backbone parameters from optimizer (permanently frozen).")
 
-    params.append({"params": eigenvalue_head.parameters(), "lr": args.lr})
-    params.append({"params": weight_head.parameters(), "lr": args.lr})
-    params.append({"params": attention_pool.parameters(), "lr": args.lr})
+    # 2. Heads group (all heads, pool, and uncertainty weighting)
+    head_params = (
+        list(eigenvalue_head.parameters()) +
+        list(weight_head.parameters()) +
+        list(attention_pool.parameters())
+    )
     if force_residual_head is not None:
-        params.append({"params": force_residual_head.parameters(), "lr": args.lr})
+        head_params += list(force_residual_head.parameters())
     if uncertainty_weighting is not None:
-        params.append({"params": uncertainty_weighting.parameters(), "lr": args.lr})
+        head_params += list(uncertainty_weighting.parameters())
+
+    params.append({"params": head_params, "lr": args.lr})
 
     return torch.optim.Adam(params)
 
@@ -469,13 +470,16 @@ def finetune(
                 force_diag = {}
 
             if uncertainty_weighting is not None:
-                losses_to_weight = {
-                    "eigenvalues": eig_loss,
-                    "weights": weight_loss,
-                }
+                losses_to_weight = {}
+                if eigenvalue_loss_weight > 0.0:
+                    losses_to_weight["eigenvalues"] = eig_loss
+                if weight_loss_weight > 0.0:
+                    losses_to_weight["weights"] = weight_loss
                 if is_physics_active:
-                    losses_to_weight["energy"] = energy_loss
-                    losses_to_weight["forces"] = forces_loss
+                    if energy_loss_weight > 0.0:
+                        losses_to_weight["energy"] = energy_loss
+                    if forces_loss_weight > 0.0:
+                        losses_to_weight["forces"] = forces_loss
                 
                 total_loss, uw_weights = uncertainty_weighting(losses_to_weight)
             else:

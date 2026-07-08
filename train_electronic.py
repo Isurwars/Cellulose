@@ -343,18 +343,15 @@ def run(args: argparse.Namespace) -> None:
 
         if args.unfreeze_epoch is not None and epoch == args.unfreeze_epoch:
             logging.info(f"--- Unfreezing GNN backbone at epoch {epoch} ---")
-            head_params_list = list(eigenvalue_head.parameters()) + list(weight_head.parameters()) + list(attention_pool.parameters())
-            if force_residual_head is not None:
-                head_params_list += list(force_residual_head.parameters())
-            head_params_set = set(head_params_list)
+            backbone_params = set(model.parameters())
             for idx, group in enumerate(optimizer.param_groups):
-                is_backbone = any(p not in head_params_set for p in group["params"])
+                is_backbone = any(p in backbone_params for p in group["params"])
                 if is_backbone:
                     group["lr"] = args.backbone_lr
-                    logging.info(f"  GNN Backbone group {idx} LR set to: {args.backbone_lr}")
+                    logging.info(f"  GNN Backbone group LR set to: {args.backbone_lr}")
                 else:
                     group["lr"] = args.lr
-                    logging.info(f"  Head group {idx} LR reset to: {args.lr}")
+                    logging.info(f"  Head group LR reset to: {args.lr}")
                 group.pop("initial_lr", None)
 
             remaining_epochs = args.max_epochs - epoch
