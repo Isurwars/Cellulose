@@ -341,7 +341,7 @@ def run(args: argparse.Namespace) -> None:
         for param in model.parameters():
             param.requires_grad = not is_currently_frozen
 
-        if args.unfreeze_epoch is not None and epoch == args.unfreeze_epoch:
+        if args.unfreeze_epoch is not None and args.unfreeze_epoch > 0 and epoch == args.unfreeze_epoch:
             logging.info(f"--- Unfreezing GNN backbone at epoch {epoch} ---")
             backbone_params = set(model.parameters())
             for idx, group in enumerate(optimizer.param_groups):

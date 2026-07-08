@@ -10,15 +10,16 @@ uv run python train_electronic.py \
   --weight_loss_weight 1.0 \
   --use_force_residual \
   --scheduler flat_cosine \
-  --unfreeze_epoch 10 \
+  --unfreeze_epoch 0 \
   --backbone_lr 1e-4 \
   --lr 1e-3 \
   --min_lr 1e-5 \
-  --batch_size 4 \
+  --batch_size 2 \
+  --accumulation_steps 8 \
   --num_steps 0 \
   --eval_every_x_epochs 1 \
-  --max_epochs 101 \
-  --warmup_epochs 1 \
+  --max_epochs 21 \
+  --warmup_epochs 3 \
   --normalize_eigenvalues \
   --normalize_forces \
   --use_uncertainty_weights

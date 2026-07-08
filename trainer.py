@@ -100,7 +100,7 @@ def build_optimizer(
     include_backbone = (not args.freeze_backbone) or (args.unfreeze_epoch is not None)
     if include_backbone:
         init_backbone_lr = (
-            0.0 if (args.freeze_backbone and args.unfreeze_epoch is not None) else args.backbone_lr
+            0.0 if (args.freeze_backbone and args.unfreeze_epoch is not None and args.unfreeze_epoch > 0) else args.backbone_lr
         )
         logging.info(f"Including GNN backbone in optimizer with initial LR: {init_backbone_lr}")
         params.append({"params": list(model.parameters()), "lr": init_backbone_lr})
