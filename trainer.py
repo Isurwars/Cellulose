@@ -435,11 +435,9 @@ def finetune(
                 device,
             )
 
-            is_physics_active = (not freeze_backbone) and (
-                energy_loss_weight > 0.0 or forces_loss_weight > 0.0
-            )
+            has_physics = (energy_loss_weight > 0.0 or forces_loss_weight > 0.0)
 
-            if is_physics_active:
+            if has_physics:
                 if is_conservative_model:
                     with torch.set_grad_enabled(True):
                         batch.positions.requires_grad_(True)
@@ -475,7 +473,7 @@ def finetune(
                     losses_to_weight["eigenvalues"] = eig_loss
                 if weight_loss_weight > 0.0:
                     losses_to_weight["weights"] = weight_loss
-                if is_physics_active:
+                if has_physics:
                     if energy_loss_weight > 0.0:
                         losses_to_weight["energy"] = energy_loss
                     if forces_loss_weight > 0.0:
@@ -498,7 +496,7 @@ def finetune(
                 "loss/weights": weight_loss.detach(),
                 "loss/total": total_loss.detach(),
             }
-            if is_physics_active:
+            if has_physics:
                 batch_outputs["loss/energy"] = energy_loss.detach()
                 batch_outputs["loss/forces"] = forces_loss.detach()
 
@@ -510,7 +508,7 @@ def finetune(
                 batch_outputs[f"forces/{k}"] = torch.tensor(v)
 
             # Energy diagnostics as plain floats
-            if is_physics_active:
+            if has_physics:
                 for k, v in energy_diag.items():
                     batch_outputs[f"energy/{k}"] = torch.tensor(v, device=device)
 
