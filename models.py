@@ -107,12 +107,11 @@ class WeightHead(nn.Module):
             ResidualBlock(hidden_dim, dropout),
             nn.LayerNorm(hidden_dim),             # stable pre-output norm
             nn.Linear(hidden_dim, num_bands),
-            nn.Sigmoid(),
         )
 
-        # Initialize the pre-sigmoid linear bias so outputs start near 0.3
-        # (middle-low range) — avoids saturation at extremes.
-        nn.init.constant_(self.mlp[-2].bias, -1.0)
+        # Initialize the final linear bias so outputs start near 0.27
+        # in probability space (logit of ~ -1.0) — avoids extreme saturation.
+        nn.init.constant_(self.mlp[-1].bias, -1.0)
 
     def forward(self, node_features: torch.Tensor, node_eigenvalues: torch.Tensor | None = None) -> torch.Tensor:
         x = self.node_norm(node_features)

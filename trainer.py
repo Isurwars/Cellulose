@@ -348,18 +348,12 @@ def finetune(
     forces_loss_weight: float = 0.0,
     is_conservative_model: bool = False,
     *,
-    eig_loss_type: str = "mse",
-    huber_delta: float = 1.0,
-    pdos_peak_boost: float = 5.0,
-    pdos_active_threshold: float = 0.1,
     couple_heads: bool = False,
     detach_coupling: bool = False,
     mean_eigenvalues: torch.Tensor | None = None,
     std_eigenvalues: torch.Tensor | None = None,
     std_forces: torch.Tensor | None = None,
     force_residual_head: ForceResidualHead | None = None,
-    force_huber_delta: float = 0.1,
-    force_loss_type: str = "mse",
     uncertainty_weighting: nn.Module | None = None,
 ) -> dict[str, float]:
     """Run one epoch of electronic-structure finetuning."""
@@ -438,10 +432,6 @@ def finetune(
                 pred_eigenvalues, true_eigenvalues_norm,
                 pred_weights, true_weights,
                 device,
-                eig_loss_type=eig_loss_type,
-                huber_delta=huber_delta,
-                peak_boost=pdos_peak_boost,
-                active_threshold=pdos_active_threshold,
             )
 
             is_physics_active = (not freeze_backbone) and (
@@ -472,8 +462,6 @@ def finetune(
                 forces_loss, force_diag = compute_force_loss(
                     pred_forces, true_forces,
                     std_forces=std_forces,
-                    huber_delta=force_huber_delta,
-                    force_loss_type=force_loss_type,
                 )
             else:
                 energy_loss = torch.tensor(0.0, device=device)
@@ -651,9 +639,10 @@ def evaluate_model(
             pred_eigs_tensor = eigenvalue_head(graph_feats)
             if couple_heads:
                 node_eigenvalues = pred_eigs_tensor[graph_idx]
-                pred_weights = weight_head(node_feats, node_eigenvalues).cpu().numpy().flatten()
+                pred_weights_logits = weight_head(node_feats, node_eigenvalues)
             else:
-                pred_weights = weight_head(node_feats).cpu().numpy().flatten()
+                pred_weights_logits = weight_head(node_feats)
+            pred_weights = torch.sigmoid(pred_weights_logits).cpu().numpy().flatten()
 
             if mean_eigenvalues is not None and std_eigenvalues is not None:
                 pred_eigs_tensor_physical = pred_eigs_tensor * std_eigenvalues + mean_eigenvalues

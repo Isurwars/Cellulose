@@ -19,10 +19,8 @@ def compute_force_loss(
     pred_forces: torch.Tensor,
     true_forces: torch.Tensor,
     std_forces: torch.Tensor | None = None,
-    huber_delta: float = 0.1,
-    force_loss_type: str = "mse",
 ) -> tuple[torch.Tensor, dict[str, float]]:
-    """Computes MSE (or Huber) loss and diagnostics (MAE, RMSE, Max Error, R²) for forces."""
+    """Computes standard MSE loss and diagnostics (MAE, RMSE, Max Error, R²) for forces."""
     if std_forces is not None:
         pred_norm = pred_forces / std_forces
         true_norm = true_forces / std_forces
@@ -30,10 +28,7 @@ def compute_force_loss(
         pred_norm = pred_forces
         true_norm = true_forces
 
-    if force_loss_type == "huber":
-        loss = F.huber_loss(pred_norm, true_norm, delta=huber_delta)
-    else:
-        loss = F.mse_loss(pred_norm, true_norm)
+    loss = F.mse_loss(pred_norm, true_norm)
 
     with torch.no_grad():
         errors = pred_forces - true_forces
@@ -98,14 +93,9 @@ def compute_stress_loss(
 def compute_eigenvalue_loss(
     pred_eigenvalues: torch.Tensor,
     true_eigenvalues: torch.Tensor,
-    eig_loss_type: str = "mse",
-    huber_delta: float = 1.0,
 ) -> tuple[torch.Tensor, dict[str, float]]:
-    """Computes MSE (or Huber) loss and diagnostics (MAE, RMSE, R²) for eigenvalues."""
-    if eig_loss_type == "huber":
-        loss = F.huber_loss(pred_eigenvalues, true_eigenvalues, delta=huber_delta)
-    else:
-        loss = F.mse_loss(pred_eigenvalues, true_eigenvalues)
+    """Computes standard MSE loss and diagnostics (MAE, RMSE, R²) for eigenvalues."""
+    loss = F.mse_loss(pred_eigenvalues, true_eigenvalues)
 
     with torch.no_grad():
         errors = pred_eigenvalues - true_eigenvalues
@@ -127,32 +117,19 @@ def compute_weight_loss(
     pred_weights: torch.Tensor,
     true_weights: torch.Tensor,
     device: torch.device,
-    *,
-    peak_boost: float = 5.0,
-    active_threshold: float = 0.05,
     **kwargs,
 ) -> tuple[torch.Tensor, dict[str, float]]:
-    """Simplified PDOS weight loss using a peak-searching (peak-weighted) loss."""
-    # Find peak locations in true_weights (local maxima)
-    # Pad to check boundary conditions
-    inner_is_peak = (true_weights[..., 1:-1] > true_weights[..., :-2]) & (true_weights[..., 1:-1] > true_weights[..., 2:])
-    is_peak = F.pad(inner_is_peak, (1, 1), mode="constant", value=False)
-
-    # Filter by threshold to ignore noise peaks
-    is_peak = is_peak & (true_weights > active_threshold)
-
-    # Peak-weighted MSE: boost the error weight at peak positions
-    weights = torch.ones_like(true_weights)
-    weights[is_peak] = 1.0 + peak_boost
-
-    diff = pred_weights - true_weights
-    loss = torch.mean(weights * (diff ** 2))
+    """Computes fractional Binary Cross Entropy (BCE) loss with logits for PDOS weights."""
+    loss = F.binary_cross_entropy_with_logits(pred_weights, true_weights)
 
     with torch.no_grad():
-        mae = diff.abs().mean().item()
-        rmse = diff.pow(2).mean().sqrt().item()
-        r2 = compute_r2(pred_weights, true_weights)
-        mse_val = F.mse_loss(pred_weights, true_weights).item()
+        # Revert predictions back to original range [0, 1] using sigmoid for evaluation/diagnostics
+        pred_weights_orig = torch.sigmoid(pred_weights)
+        diff_orig = pred_weights_orig - true_weights
+        mae = diff_orig.abs().mean().item()
+        rmse = diff_orig.pow(2).mean().sqrt().item()
+        r2 = compute_r2(pred_weights_orig, true_weights)
+        mse_val = F.mse_loss(pred_weights_orig, true_weights).item()
 
     diagnostics = {
         "weights_mae": mae,
@@ -169,24 +146,15 @@ def compute_electronic_losses(
     pred_weights: torch.Tensor,
     true_weights: torch.Tensor,
     device: torch.device,
-    *,
-    eig_loss_type: str = "mse",
-    huber_delta: float = 1.0,
-    peak_boost: float = 5.0,
-    active_threshold: float = 0.05,
     **kwargs,
 ) -> tuple[torch.Tensor, torch.Tensor, dict[str, float]]:
-    """Orchestrates simplified eigenvalue and peak-searching PDOS weight loss."""
+    """Orchestrates standard MSE loss computation for eigenvalues and logit-space PDOS weights."""
     eig_loss, eig_diag = compute_eigenvalue_loss(
         pred_eigenvalues, true_eigenvalues,
-        eig_loss_type=eig_loss_type,
-        huber_delta=huber_delta,
     )
 
     weight_loss, weight_diag = compute_weight_loss(
         pred_weights, true_weights, device,
-        peak_boost=peak_boost,
-        active_threshold=active_threshold,
     )
 
     # Merge diagnostics

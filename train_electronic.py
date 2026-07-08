@@ -406,18 +406,12 @@ def run(args: argparse.Namespace) -> None:
             energy_loss_weight=args.energy_loss_weight,
             forces_loss_weight=args.forces_loss_weight,
             is_conservative_model=is_conservative_model,
-            eig_loss_type=args.eig_loss_type,
-            huber_delta=args.huber_delta,
-            pdos_peak_boost=args.pdos_peak_boost,
-            pdos_active_threshold=args.pdos_active_threshold,
             couple_heads=args.couple_heads,
             detach_coupling=args.detach_coupling,
             mean_eigenvalues=mean_eigenvalues,
             std_eigenvalues=std_eigenvalues,
             std_forces=std_forces,
             force_residual_head=force_residual_head,
-            force_huber_delta=args.force_huber_delta,
-            force_loss_type=args.force_loss_type,
             uncertainty_weighting=uncertainty_weighting,
         )
 
@@ -573,15 +567,9 @@ def main() -> None:
     parser.add_argument("--eval_every_x_epochs", default=1, type=int, help="Frequency of running evaluation on cached database frames. Set to 0 to disable.")
     parser.add_argument("--val_fraction", default=0.1, type=float, help="Fraction of data to hold out for validation (0.0 = train on all, evaluate on all).")
     parser.add_argument("--dropout", default=0.1, type=float, help="Dropout rate in the heads (0.0 to disable).")
-    parser.add_argument("--eig_loss_type", default="mse", choices=["mse", "huber"], help="Loss type for eigenvalues ('mse' or 'huber').")
-    parser.add_argument("--huber_delta", default=1.0, type=float, help="Delta threshold for Huber loss.")
-    parser.add_argument("--pdos_peak_boost", default=5.0, type=float, help="PDOS peak boost factor inside loss.")
-    parser.add_argument("--pdos_active_threshold", default=0.05, type=float, help="Threshold above which true weights are considered peaks for the peak-searching loss.")
     parser.add_argument("--no_couple_heads", action="store_false", dest="couple_heads", help="Do not couple the eigenvalue head to the weight head.")
     parser.add_argument("--detach_coupling", action="store_true", help="Detach the predicted eigenvalues before feeding them to the weight head to prevent weight gradients from flowing back to the eigenvalue head.")
     parser.add_argument("--use_force_residual", action="store_true", help="Use ForceResidualHead to learn domain-specific force corrections.")
-    parser.add_argument("--force_huber_delta", default=0.1, type=float, help="Huber delta for force loss.")
-    parser.add_argument("--force_loss_type", default="mse", choices=["mse", "huber"], help="Loss type for forces ('mse' or 'huber').")
     parser.add_argument("--use_uncertainty_weights", action="store_true", help="Use learnable uncertainty weights to scale loss terms dynamically.")
 
     args, _ = parser.parse_known_args()
