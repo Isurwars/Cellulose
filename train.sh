@@ -8,10 +8,15 @@ uv run python train_electronic.py \
   --forces_loss_weight 1.0 \
   --eigenvalue_loss_weight 1.0 \
   --weight_loss_weight 3.0 \
-  --pdos_peak_boost 5.0 \
+  --pdos_peak_boost 15.0 \
   --pdos_cosine_weight 0.3 \
+  --pdos_r2_weight 1.0 \
+  --pdos_deriv_weight 5.0 \
+  --pdos_peak_scaling quadratic \
   --use_force_residual \
-  --force_huber_delta 0.1 \
+  --force_loss_type mse \
+  --pdos_cramer_scale 100.0 \
+  --pdos_magnitude_loss_type log_cosh \
   --scheduler flat_cosine \
   --unfreeze_epoch 3 \
   --backbone_lr 5e-5 \
@@ -22,7 +27,8 @@ uv run python train_electronic.py \
   --batch_size 4 \
   --num_steps 0 \
   --eval_every_x_epochs 1 \
-  --max_epochs 21 \
+  --max_epochs 101 \
   --warmup_epochs 1 \
   --normalize_eigenvalues \
   --normalize_forces
+  # Optional: add --use_uncertainty_weights to enable learnable multi-task loss scaling

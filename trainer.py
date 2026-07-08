@@ -27,6 +27,32 @@ from losses import compute_electronic_losses, compute_force_loss
 from models import AttentionPool, ForceResidualHead, WeightHead
 
 
+class UncertaintyLossWeighting(nn.Module):
+    """Learnable homoscedastic uncertainty loss weighting (Kendall et al.)."""
+    def __init__(self, tasks: list[str], initial_weights: dict[str, float]) -> None:
+        super().__init__()
+        self.tasks = tasks
+        log_vars = {}
+        for task in tasks:
+            w = initial_weights.get(task, 1.0)
+            w = max(w, 1e-4)
+            log_vars[task] = nn.Parameter(torch.tensor(-np.log(w), dtype=torch.float32))
+        self.log_vars = nn.ParameterDict(log_vars)
+
+    def forward(self, losses: dict[str, torch.Tensor]) -> tuple[torch.Tensor, dict[str, float]]:
+        total_loss = 0.0
+        weighted_losses = {}
+        for task, loss in losses.items():
+            if task in self.log_vars:
+                log_var = self.log_vars[task]
+                precision = torch.exp(-log_var)
+                total_loss += precision * loss + 0.5 * log_var
+                weighted_losses[f"uncertainty_weight/{task}"] = precision.item()
+            else:
+                total_loss += loss
+        return total_loss, weighted_losses
+
+
 def build_loss_weights(args: argparse.Namespace) -> dict[str, float]:
     """Convert CLI loss-weight arguments into the dict expected by Orb models."""
     is_conservative = "conservative" in args.base_model
@@ -65,6 +91,7 @@ def build_optimizer(
     attention_pool: AttentionPool,
     args: argparse.Namespace,
     force_residual_head: ForceResidualHead | None = None,
+    uncertainty_weighting: nn.Module | None = None,
 ) -> torch.optim.Optimizer:
     """Build the Adam optimizer with per-group learning rates."""
     include_backbone = (not args.freeze_backbone) or (args.unfreeze_epoch is not None)
@@ -89,6 +116,8 @@ def build_optimizer(
     params.append({"params": attention_pool.parameters(), "lr": args.lr})
     if force_residual_head is not None:
         params.append({"params": force_residual_head.parameters(), "lr": args.lr})
+    if uncertainty_weighting is not None:
+        params.append({"params": uncertainty_weighting.parameters(), "lr": args.lr})
 
     return torch.optim.Adam(params)
 
@@ -213,6 +242,7 @@ def save_checkpoint(
     std_eigenvalues: torch.Tensor | None = None,
     std_forces: torch.Tensor | None = None,
     force_residual_head: ForceResidualHead | None = None,
+    uncertainty_weighting: nn.Module | None = None,
 ) -> None:
     """Save a training checkpoint to disk."""
     os.makedirs(path, exist_ok=True)
@@ -229,6 +259,7 @@ def save_checkpoint(
         "std_eigenvalues": std_eigenvalues,
         "std_forces": std_forces,
         "force_residual_head_state": force_residual_head.state_dict() if force_residual_head is not None else None,
+        "uncertainty_weighting_state": uncertainty_weighting.state_dict() if uncertainty_weighting is not None else None,
     }
     filepath = os.path.join(path, filename or f"checkpoint_epoch{epoch}.ckpt")
     torch.save(checkpoint_data, filepath)
@@ -246,6 +277,7 @@ def resume_checkpoint(
     device: torch.device,
     unfreeze_epoch: int | None,
     force_residual_head: ForceResidualHead | None = None,
+    uncertainty_weighting: nn.Module | None = None,
 ) -> tuple[int, torch.Tensor | None, torch.Tensor | None, torch.Tensor | None]:
     """Restore model, heads, attention pool, optimizer, and scheduler from a checkpoint."""
     logging.info(f"Resuming from checkpoint: {checkpoint_path}")
@@ -264,6 +296,10 @@ def resume_checkpoint(
         logging.info("Loaded force_residual_head state from checkpoint.")
     elif force_residual_head is not None:
         logging.warning("No force_residual_head_state in checkpoint; using fresh init.")
+
+    if uncertainty_weighting is not None and "uncertainty_weighting_state" in checkpoint and checkpoint["uncertainty_weighting_state"] is not None:
+        uncertainty_weighting.load_state_dict(checkpoint["uncertainty_weighting_state"])
+        logging.info("Loaded uncertainty_weighting state from checkpoint.")
 
     try:
         optimizer.load_state_dict(checkpoint["optimizer"])
@@ -319,6 +355,9 @@ def finetune(
     pdos_magnitude_weight: float = 3.0,
     pdos_cramer_weight: float = 0.5,
     pdos_cosine_weight: float = 0.3,
+    pdos_r2_weight: float = 1.0,
+    pdos_deriv_weight: float = 2.0,
+    pdos_peak_scaling: str = "linear",
     couple_heads: bool = False,
     detach_coupling: bool = False,
     mean_eigenvalues: torch.Tensor | None = None,
@@ -326,6 +365,10 @@ def finetune(
     std_forces: torch.Tensor | None = None,
     force_residual_head: ForceResidualHead | None = None,
     force_huber_delta: float = 0.1,
+    force_loss_type: str = "mse",
+    pdos_cramer_scale: float = 100.0,
+    pdos_magnitude_loss_type: str = "log_cosh",
+    uncertainty_weighting: nn.Module | None = None,
 ) -> dict[str, float]:
     """Run one epoch of electronic-structure finetuning."""
     run_handle: Any | None = wandb.run if WANDB_AVAILABLE else None
@@ -410,6 +453,11 @@ def finetune(
                 magnitude_weight=pdos_magnitude_weight,
                 cramer_weight=pdos_cramer_weight,
                 cosine_weight=pdos_cosine_weight,
+                r2_weight=pdos_r2_weight,
+                deriv_weight=pdos_deriv_weight,
+                peak_scaling=pdos_peak_scaling,
+                cramer_scale=pdos_cramer_scale,
+                magnitude_loss_type=pdos_magnitude_loss_type,
             )
 
             is_physics_active = (not freeze_backbone) and (
@@ -441,18 +489,32 @@ def finetune(
                     pred_forces, true_forces,
                     std_forces=std_forces,
                     huber_delta=force_huber_delta,
+                    force_loss_type=force_loss_type,
                 )
             else:
                 energy_loss = torch.tensor(0.0, device=device)
                 forces_loss = torch.tensor(0.0, device=device)
                 force_diag = {}
 
-            total_loss = (
-                (energy_loss_weight * energy_loss)
-                + (forces_loss_weight * forces_loss)
-                + (eigenvalue_loss_weight * eig_loss)
-                + (weight_loss_weight * weight_loss)
-            )
+            if uncertainty_weighting is not None:
+                losses_to_weight = {
+                    "eigenvalues": eig_loss,
+                    "weights": weight_loss,
+                }
+                if is_physics_active:
+                    losses_to_weight["energy"] = energy_loss
+                    losses_to_weight["forces"] = forces_loss
+                
+                total_loss, uw_weights = uncertainty_weighting(losses_to_weight)
+            else:
+                total_loss = (
+                    (energy_loss_weight * energy_loss)
+                    + (forces_loss_weight * forces_loss)
+                    + (eigenvalue_loss_weight * eig_loss)
+                    + (weight_loss_weight * weight_loss)
+                )
+                uw_weights = {}
+
             scaled_loss = total_loss / accumulation_steps
 
             batch_outputs: dict[str, torch.Tensor] = {
@@ -463,6 +525,10 @@ def finetune(
             if is_physics_active:
                 batch_outputs["loss/energy"] = energy_loss.detach()
                 batch_outputs["loss/forces"] = forces_loss.detach()
+
+            for k, v in uw_weights.items():
+                batch_outputs[k] = torch.tensor(v, device=device)
+
             # Force diagnostics as plain floats
             for k, v in force_diag.items():
                 batch_outputs[f"forces/{k}"] = torch.tensor(v)

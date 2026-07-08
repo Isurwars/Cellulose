@@ -181,10 +181,33 @@ def run(args: argparse.Namespace) -> None:
         for param in model.parameters():
             param.requires_grad = False
 
+    # --- Uncertainty Weighting ---
+    uncertainty_weighting = None
+    if args.use_uncertainty_weights:
+        active_tasks = []
+        initial_weights = {}
+        if args.energy_loss_weight > 0.0:
+            active_tasks.append("energy")
+            initial_weights["energy"] = args.energy_loss_weight
+        if args.forces_loss_weight > 0.0:
+            active_tasks.append("forces")
+            initial_weights["forces"] = args.forces_loss_weight
+        if args.eigenvalue_loss_weight > 0.0:
+            active_tasks.append("eigenvalues")
+            initial_weights["eigenvalues"] = args.eigenvalue_loss_weight
+        if args.weight_loss_weight > 0.0:
+            active_tasks.append("weights")
+            initial_weights["weights"] = args.weight_loss_weight
+        
+        from trainer import UncertaintyLossWeighting
+        uncertainty_weighting = UncertaintyLossWeighting(active_tasks, initial_weights).to(device)
+        logging.info(f"Initialized learnable uncertainty loss weighting for tasks: {active_tasks}")
+
     # --- Optimizer ---
     optimizer = build_optimizer(
         model, eigenvalue_head, weight_head, attention_pool, args,
-        force_residual_head=force_residual_head
+        force_residual_head=force_residual_head,
+        uncertainty_weighting=uncertainty_weighting,
     )
 
     # --- Scheduler ---
@@ -206,6 +229,7 @@ def run(args: argparse.Namespace) -> None:
             optimizer, lr_scheduler, device,
             unfreeze_epoch=args.unfreeze_epoch,
             force_residual_head=force_residual_head,
+            uncertainty_weighting=uncertainty_weighting,
         )
 
     # --- Wandb ---
@@ -334,8 +358,11 @@ def run(args: argparse.Namespace) -> None:
                 group.pop("initial_lr", None)
 
             remaining_epochs = args.max_epochs - epoch
+            import copy
+            rebuild_args = copy.deepcopy(args)
+            rebuild_args.warmup_epochs = 0
             lr_scheduler, cosine_start_epoch = build_scheduler(
-                optimizer, args,
+                optimizer, rebuild_args,
                 total_epochs=remaining_epochs,
             )
             if cosine_start_epoch is not None:
@@ -386,6 +413,9 @@ def run(args: argparse.Namespace) -> None:
             pdos_magnitude_weight=args.pdos_magnitude_weight,
             pdos_cramer_weight=args.pdos_cramer_weight,
             pdos_cosine_weight=args.pdos_cosine_weight,
+            pdos_r2_weight=args.pdos_r2_weight,
+            pdos_deriv_weight=args.pdos_deriv_weight,
+            pdos_peak_scaling=args.pdos_peak_scaling,
             couple_heads=args.couple_heads,
             detach_coupling=args.detach_coupling,
             mean_eigenvalues=mean_eigenvalues,
@@ -393,6 +423,10 @@ def run(args: argparse.Namespace) -> None:
             std_forces=std_forces,
             force_residual_head=force_residual_head,
             force_huber_delta=args.force_huber_delta,
+            force_loss_type=args.force_loss_type,
+            pdos_cramer_scale=args.pdos_cramer_scale,
+            pdos_magnitude_loss_type=args.pdos_magnitude_loss_type,
+            uncertainty_weighting=uncertainty_weighting,
         )
 
         if lr_scheduler is not None:
@@ -474,9 +508,10 @@ def run(args: argparse.Namespace) -> None:
                     std_eigenvalues=std_eigenvalues,
                     std_forces=std_forces,
                     force_residual_head=force_residual_head,
+                    uncertainty_weighting=uncertainty_weighting,
                 )
 
-            is_unfrozen = args.unfreeze_epoch is None or epoch >= args.unfreeze_epoch
+            is_unfrozen = args.unfreeze_epoch is None or epoch >= args.unfrozen_epoch if hasattr(args, 'unfrozen_epoch') else args.unfreeze_epoch is None or epoch >= args.unfreeze_epoch
             exploding_eigs = eval_metrics["eigs_rmse"] > 5.0
             exploding_forces = (
                 not np.isnan(eval_metrics["forces_rmse"]) and eval_metrics["forces_rmse"] > 2.0
@@ -495,6 +530,7 @@ def run(args: argparse.Namespace) -> None:
                 std_eigenvalues=std_eigenvalues,
                 std_forces=std_forces,
                 force_residual_head=force_residual_head,
+                uncertainty_weighting=uncertainty_weighting,
             )
 
     if wandb_run is not None:
@@ -552,10 +588,17 @@ def main() -> None:
     parser.add_argument("--pdos_magnitude_weight", default=3.0, type=float, help="Magnitude component weight in PDOS loss.")
     parser.add_argument("--pdos_cramer_weight", default=0.5, type=float, help="Cramér shape component weight in PDOS loss.")
     parser.add_argument("--pdos_cosine_weight", default=0.3, type=float, help="Cosine shape component weight in PDOS loss.")
+    parser.add_argument("--pdos_r2_weight", default=1.0, type=float, help="R2 component weight in PDOS loss.")
+    parser.add_argument("--pdos_deriv_weight", default=2.0, type=float, help="Spectral derivative component weight in PDOS loss.")
+    parser.add_argument("--pdos_peak_scaling", default="linear", choices=["sqrt", "linear", "quadratic"], help="Peak scaling type for PDOS magnitude loss.")
     parser.add_argument("--no_couple_heads", action="store_false", dest="couple_heads", help="Do not couple the eigenvalue head to the weight head.")
     parser.add_argument("--detach_coupling", action="store_true", help="Detach the predicted eigenvalues before feeding them to the weight head to prevent weight gradients from flowing back to the eigenvalue head.")
     parser.add_argument("--use_force_residual", action="store_true", help="Use ForceResidualHead to learn domain-specific force corrections.")
     parser.add_argument("--force_huber_delta", default=0.1, type=float, help="Huber delta for force loss.")
+    parser.add_argument("--force_loss_type", default="mse", choices=["mse", "huber"], help="Loss type for forces ('mse' or 'huber').")
+    parser.add_argument("--pdos_cramer_scale", default=100.0, type=float, help="Scaling factor for Cramér shape loss.")
+    parser.add_argument("--pdos_magnitude_loss_type", default="log_cosh", choices=["log_cosh", "mse", "huber"], help="Loss type for weight magnitudes.")
+    parser.add_argument("--use_uncertainty_weights", action="store_true", help="Use learnable uncertainty weights to scale loss terms dynamically.")
 
     args, _ = parser.parse_known_args()
     run(args)
