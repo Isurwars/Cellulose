@@ -6,28 +6,21 @@ uv run python train_electronic.py \
   --energy_loss_weight 0.0 \
   --stress_loss_weight 0.0 \
   --forces_loss_weight 1.0 \
-  --eigenvalue_loss_weight 1.0 \
-  --weight_loss_weight 3.0 \
+  --eigenvalue_loss_weight 0.05 \
+  --weight_loss_weight 1.0 \
   --pdos_peak_boost 15.0 \
-  --pdos_cosine_weight 0.3 \
-  --pdos_r2_weight 1.0 \
-  --pdos_deriv_weight 5.0 \
-  --pdos_peak_scaling quadratic \
+  --pdos_active_threshold 0.05 \
   --use_force_residual \
   --force_loss_type mse \
-  --pdos_cramer_scale 100.0 \
-  --pdos_magnitude_loss_type log_cosh \
-  --scheduler flat_cosine \
-  --unfreeze_epoch 3 \
+  --scheduler cosine \
+  --unfreeze_epoch 10 \
   --backbone_lr 5e-5 \
   --lr 1e-3 \
   --min_lr 1e-5 \
-  --weight_head_noise_std 5e-5 \
-  --weight_head_noise_interval 2 \
   --batch_size 4 \
   --num_steps 0 \
   --eval_every_x_epochs 1 \
-  --max_epochs 101 \
+  --max_epochs 201 \
   --warmup_epochs 1 \
   --normalize_eigenvalues \
   --normalize_forces

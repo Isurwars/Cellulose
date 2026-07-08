@@ -103,6 +103,8 @@ class WeightHead(nn.Module):
             nn.Dropout(dropout),
             ResidualBlock(hidden_dim, dropout),
             ResidualBlock(hidden_dim, dropout),   # extra capacity
+            ResidualBlock(hidden_dim, dropout),
+            ResidualBlock(hidden_dim, dropout),
             nn.LayerNorm(hidden_dim),             # stable pre-output norm
             nn.Linear(hidden_dim, num_bands),
             nn.Sigmoid(),

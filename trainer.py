@@ -23,7 +23,7 @@ from orb_models.common.training.metrics import ScalarMetricTracker
 from orb_models.common.atoms.abstract_atoms_adapter import AbstractAtomsAdapter
 
 from utils import build_graph_index, prefix_keys
-from losses import compute_electronic_losses, compute_force_loss
+from losses import compute_electronic_losses, compute_force_loss, compute_energy_loss
 from models import AttentionPool, ForceResidualHead, WeightHead
 
 
@@ -352,12 +352,6 @@ def finetune(
     huber_delta: float = 1.0,
     pdos_peak_boost: float = 5.0,
     pdos_active_threshold: float = 0.1,
-    pdos_magnitude_weight: float = 3.0,
-    pdos_cramer_weight: float = 0.5,
-    pdos_cosine_weight: float = 0.3,
-    pdos_r2_weight: float = 1.0,
-    pdos_deriv_weight: float = 2.0,
-    pdos_peak_scaling: str = "linear",
     couple_heads: bool = False,
     detach_coupling: bool = False,
     mean_eigenvalues: torch.Tensor | None = None,
@@ -366,8 +360,6 @@ def finetune(
     force_residual_head: ForceResidualHead | None = None,
     force_huber_delta: float = 0.1,
     force_loss_type: str = "mse",
-    pdos_cramer_scale: float = 100.0,
-    pdos_magnitude_loss_type: str = "log_cosh",
     uncertainty_weighting: nn.Module | None = None,
 ) -> dict[str, float]:
     """Run one epoch of electronic-structure finetuning."""
@@ -442,7 +434,7 @@ def finetune(
 
             true_weights = batch.node_targets["weights"]
 
-            eig_loss, weight_loss = compute_electronic_losses(
+            eig_loss, weight_loss, electronic_diag = compute_electronic_losses(
                 pred_eigenvalues, true_eigenvalues_norm,
                 pred_weights, true_weights,
                 device,
@@ -450,14 +442,6 @@ def finetune(
                 huber_delta=huber_delta,
                 peak_boost=pdos_peak_boost,
                 active_threshold=pdos_active_threshold,
-                magnitude_weight=pdos_magnitude_weight,
-                cramer_weight=pdos_cramer_weight,
-                cosine_weight=pdos_cosine_weight,
-                r2_weight=pdos_r2_weight,
-                deriv_weight=pdos_deriv_weight,
-                peak_scaling=pdos_peak_scaling,
-                cramer_scale=pdos_cramer_scale,
-                magnitude_loss_type=pdos_magnitude_loss_type,
             )
 
             is_physics_active = (not freeze_backbone) and (
@@ -484,7 +468,7 @@ def finetune(
                 true_energy = batch.system_targets["energy"]
                 true_forces = batch.node_targets["forces"]
 
-                energy_loss = torch.nn.functional.mse_loss(pred_energy, true_energy)
+                energy_loss, energy_diag = compute_energy_loss(pred_energy, true_energy)
                 forces_loss, force_diag = compute_force_loss(
                     pred_forces, true_forces,
                     std_forces=std_forces,
@@ -532,6 +516,16 @@ def finetune(
             # Force diagnostics as plain floats
             for k, v in force_diag.items():
                 batch_outputs[f"forces/{k}"] = torch.tensor(v)
+
+            # Energy diagnostics as plain floats
+            if is_physics_active:
+                for k, v in energy_diag.items():
+                    batch_outputs[f"energy/{k}"] = torch.tensor(v, device=device)
+
+            # Electronic diagnostics as plain floats
+            for k, v in electronic_diag.items():
+                batch_outputs[f"electronic/{k}"] = torch.tensor(v, device=device)
+
             window_metrics.update(batch_outputs)
             epoch_metrics.update(batch_outputs)
 

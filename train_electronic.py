@@ -410,12 +410,6 @@ def run(args: argparse.Namespace) -> None:
             huber_delta=args.huber_delta,
             pdos_peak_boost=args.pdos_peak_boost,
             pdos_active_threshold=args.pdos_active_threshold,
-            pdos_magnitude_weight=args.pdos_magnitude_weight,
-            pdos_cramer_weight=args.pdos_cramer_weight,
-            pdos_cosine_weight=args.pdos_cosine_weight,
-            pdos_r2_weight=args.pdos_r2_weight,
-            pdos_deriv_weight=args.pdos_deriv_weight,
-            pdos_peak_scaling=args.pdos_peak_scaling,
             couple_heads=args.couple_heads,
             detach_coupling=args.detach_coupling,
             mean_eigenvalues=mean_eigenvalues,
@@ -424,8 +418,6 @@ def run(args: argparse.Namespace) -> None:
             force_residual_head=force_residual_head,
             force_huber_delta=args.force_huber_delta,
             force_loss_type=args.force_loss_type,
-            pdos_cramer_scale=args.pdos_cramer_scale,
-            pdos_magnitude_loss_type=args.pdos_magnitude_loss_type,
             uncertainty_weighting=uncertainty_weighting,
         )
 
@@ -584,20 +576,12 @@ def main() -> None:
     parser.add_argument("--eig_loss_type", default="mse", choices=["mse", "huber"], help="Loss type for eigenvalues ('mse' or 'huber').")
     parser.add_argument("--huber_delta", default=1.0, type=float, help="Delta threshold for Huber loss.")
     parser.add_argument("--pdos_peak_boost", default=5.0, type=float, help="PDOS peak boost factor inside loss.")
-    parser.add_argument("--pdos_active_threshold", default=0.1, type=float, help="Threshold for active nodes in Cramér shape loss.")
-    parser.add_argument("--pdos_magnitude_weight", default=3.0, type=float, help="Magnitude component weight in PDOS loss.")
-    parser.add_argument("--pdos_cramer_weight", default=0.5, type=float, help="Cramér shape component weight in PDOS loss.")
-    parser.add_argument("--pdos_cosine_weight", default=0.3, type=float, help="Cosine shape component weight in PDOS loss.")
-    parser.add_argument("--pdos_r2_weight", default=1.0, type=float, help="R2 component weight in PDOS loss.")
-    parser.add_argument("--pdos_deriv_weight", default=2.0, type=float, help="Spectral derivative component weight in PDOS loss.")
-    parser.add_argument("--pdos_peak_scaling", default="linear", choices=["sqrt", "linear", "quadratic"], help="Peak scaling type for PDOS magnitude loss.")
+    parser.add_argument("--pdos_active_threshold", default=0.05, type=float, help="Threshold above which true weights are considered peaks for the peak-searching loss.")
     parser.add_argument("--no_couple_heads", action="store_false", dest="couple_heads", help="Do not couple the eigenvalue head to the weight head.")
     parser.add_argument("--detach_coupling", action="store_true", help="Detach the predicted eigenvalues before feeding them to the weight head to prevent weight gradients from flowing back to the eigenvalue head.")
     parser.add_argument("--use_force_residual", action="store_true", help="Use ForceResidualHead to learn domain-specific force corrections.")
     parser.add_argument("--force_huber_delta", default=0.1, type=float, help="Huber delta for force loss.")
     parser.add_argument("--force_loss_type", default="mse", choices=["mse", "huber"], help="Loss type for forces ('mse' or 'huber').")
-    parser.add_argument("--pdos_cramer_scale", default=100.0, type=float, help="Scaling factor for Cramér shape loss.")
-    parser.add_argument("--pdos_magnitude_loss_type", default="log_cosh", choices=["log_cosh", "mse", "huber"], help="Loss type for weight magnitudes.")
     parser.add_argument("--use_uncertainty_weights", action="store_true", help="Use learnable uncertainty weights to scale loss terms dynamically.")
 
     args, _ = parser.parse_known_args()
