@@ -1,6 +1,6 @@
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 uv run python train_electronic.py \
-  --data_path cellulose_finetuning.db \
+  --data_path cellulose.db \
   --base_model orb_v3_direct_omol \
   --custom_reference_energies refs.json \
   --energy_loss_weight 0.0 \
@@ -15,7 +15,7 @@ uv run python train_electronic.py \
   --lr 1e-3 \
   --min_lr 1e-5 \
   --batch_size 2 \
-  --accumulation_steps 8 \
+  --accumulation_steps 1 \
   --num_steps 0 \
   --eval_every_x_epochs 1 \
   --max_epochs 21 \

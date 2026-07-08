@@ -119,17 +119,31 @@ def compute_weight_loss(
     device: torch.device,
     **kwargs,
 ) -> tuple[torch.Tensor, dict[str, float]]:
-    """Computes fractional Binary Cross Entropy (BCE) loss with logits for PDOS weights."""
-    loss = F.binary_cross_entropy_with_logits(pred_weights, true_weights)
+    """Computes weight loss. Uses standard MSE loss for logit-transformed targets,
+    and falls back to fractional Binary Cross Entropy (BCE) with logits otherwise.
+    """
+    is_transformed = (true_weights.min() < -0.1) or (true_weights.max() > 1.1)
 
-    with torch.no_grad():
-        # Revert predictions back to original range [0, 1] using sigmoid for evaluation/diagnostics
-        pred_weights_orig = torch.sigmoid(pred_weights)
-        diff_orig = pred_weights_orig - true_weights
-        mae = diff_orig.abs().mean().item()
-        rmse = diff_orig.pow(2).mean().sqrt().item()
-        r2 = compute_r2(pred_weights_orig, true_weights)
-        mse_val = F.mse_loss(pred_weights_orig, true_weights).item()
+    if is_transformed:
+        # Standard MSE in logit space
+        loss = F.mse_loss(pred_weights, true_weights)
+        with torch.no_grad():
+            pred_weights_orig = torch.sigmoid(pred_weights)
+            true_weights_orig = torch.sigmoid(true_weights)
+            diff_orig = pred_weights_orig - true_weights_orig
+            mae = diff_orig.abs().mean().item()
+            rmse = diff_orig.pow(2).mean().sqrt().item()
+            r2 = compute_r2(pred_weights_orig, true_weights_orig)
+            mse_val = F.mse_loss(pred_weights_orig, true_weights_orig).item()
+    else:
+        loss = F.binary_cross_entropy_with_logits(pred_weights, true_weights)
+        with torch.no_grad():
+            pred_weights_orig = torch.sigmoid(pred_weights)
+            diff_orig = pred_weights_orig - true_weights
+            mae = diff_orig.abs().mean().item()
+            rmse = diff_orig.pow(2).mean().sqrt().item()
+            r2 = compute_r2(pred_weights_orig, true_weights)
+            mse_val = F.mse_loss(pred_weights_orig, true_weights).item()
 
     diagnostics = {
         "weights_mae": mae,

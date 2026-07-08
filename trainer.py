@@ -655,7 +655,15 @@ def evaluate_model(
 
             results["eigs_true"].append(gt["eigenvalues"])
             results["eigs_pred"].append(pred_eigs)
-            results["weights_true"].append(np.array(gt["weights"]).flatten())
+
+            w_true_np = np.array(gt["weights"]).flatten()
+            is_w_transformed = (w_true_np.min() < -0.1) or (w_true_np.max() > 1.1)
+            if is_w_transformed:
+                w_true_physical = 1.0 / (1.0 + np.exp(-w_true_np))
+            else:
+                w_true_physical = w_true_np
+
+            results["weights_true"].append(w_true_physical)
             results["weights_pred"].append(pred_weights)
 
     f_true = np.concatenate(results["forces_true"]).flatten()
