@@ -686,9 +686,9 @@ def evaluate_model(
 
     if plot_path is not None:
         _save_parity_plots(
-            eig_true, eig_pred, eigs_rmse,
-            w_true, w_pred, weights_rmse,
-            f_true, f_pred, forces_rmse,
+            eig_true, eig_pred, eigs_rmse, eigs_r2,
+            w_true, w_pred, weights_rmse, weights_r2,
+            f_true, f_pred, forces_rmse, forces_r2,
             plot_path,
         )
 
@@ -706,12 +706,15 @@ def _save_parity_plots(
     eig_true: np.ndarray,
     eig_pred: np.ndarray,
     eigs_rmse: float,
+    eigs_r2: float,
     w_true: np.ndarray,
     w_pred: np.ndarray,
     weights_rmse: float,
+    weights_r2: float,
     f_true: np.ndarray | None,
     f_pred: np.ndarray | None,
     forces_rmse: float,
+    forces_r2: float,
     plot_path: str,
 ) -> None:
     """Save a 3-panel parity plot to disk."""
@@ -719,20 +722,20 @@ def _save_parity_plots(
 
     ax[0].scatter(eig_true, eig_pred, alpha=0.1, s=0.5)
     ax[0].plot([eig_true.min(), eig_true.max()], [eig_true.min(), eig_true.max()], "r--")
-    ax[0].set_title(f"Eigenvalues (RMSE: {eigs_rmse:.3f} eV)")
+    ax[0].set_title(f"Eigenvalues (RMSE: {eigs_rmse:.3f} eV, R²: {eigs_r2:.4f})")
     ax[0].set_xlabel("DFT Eigenvalues (eV)")
     ax[0].set_ylabel("ML Predicted (eV)")
 
     ax[1].scatter(w_true, w_pred, alpha=0.1, s=0.5)
     ax[1].plot([w_true.min(), w_true.max()], [w_true.min(), w_true.max()], "r--")
-    ax[1].set_title(f"PDOS Weights (RMSE: {weights_rmse:.3f})")
+    ax[1].set_title(f"PDOS Weights (RMSE: {weights_rmse:.3f}, R²: {weights_r2:.4f})")
     ax[1].set_xlabel("DFT PDOS Weights")
     ax[1].set_ylabel("ML Predicted")
 
     if f_true is not None and f_pred is not None:
         ax[2].scatter(f_true, f_pred, alpha=0.3, s=1)
         ax[2].plot([f_true.min(), f_true.max()], [f_true.min(), f_true.max()], "r--")
-        ax[2].set_title(f"Forces (RMSE: {forces_rmse:.3f} eV/Å)")
+        ax[2].set_title(f"Forces (RMSE: {forces_rmse:.3f} eV/Å, R²: {forces_r2:.4f})")
     else:
         ax[2].set_title("Forces (skipped — fast eval)")
     ax[2].set_xlabel("DFT Forces (eV/Å)")
