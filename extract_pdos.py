@@ -120,7 +120,7 @@ def parse_manual_bands(filename):
     return np.array(eigenvalues)
 
 def transform_target(y):
-    y = np.clip(y, 1e-5, 1 - 1e-5)
+    y = np.clip(y, 1e-4, 1 - 1e-4)
     return np.log(y / (1 - y))
 
 def write_mace_dataset(filename, dataset):

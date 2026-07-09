@@ -329,7 +329,7 @@ def run(args: argparse.Namespace) -> None:
 
     # --- Training loop ---
     logging.info("Starting training!")
-    num_steps = args.num_steps if args.num_steps > 0 else None
+    num_steps = args.num_steps if (args.num_steps is not None and args.num_steps > 0) else None
     best_composite_metric = float("inf")
     config_dict = vars(args)
 
@@ -537,7 +537,7 @@ def main() -> None:
     parser.add_argument("--gradient_clip_val", default=0.5, type=float)
     parser.add_argument("--max_epochs", default=50, type=int)
     parser.add_argument("--save_every_x_epochs", default=5, type=int)
-    parser.add_argument("--num_steps", default=100, type=int)
+    parser.add_argument("--num_steps", default=0, type=int)
     parser.add_argument("--checkpoint_path", default=os.path.join(os.getcwd(), "ckpts_electronic"), type=str)
     parser.add_argument("--resume_from_checkpoint", default=None, type=str, help="Path to checkpoint to resume training.")
     parser.add_argument("--lr", default=3e-4, type=float)

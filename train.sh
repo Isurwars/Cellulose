@@ -1,11 +1,10 @@
-export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
-uv run python train_electronic.py \
+uv run python run_finetune.py \
   --data_path cellulose.db \
   --base_model orb_v3_direct_omol \
   --custom_reference_energies refs.json \
   --energy_loss_weight 0.0 \
   --stress_loss_weight 0.0 \
-  --forces_loss_weight 1.0 \
+  --forces_loss_weight 0.1 \
   --eigenvalue_loss_weight 0.01 \
   --weight_loss_weight 1.0 \
   --use_force_residual \
@@ -14,12 +13,10 @@ uv run python train_electronic.py \
   --backbone_lr 1e-4 \
   --lr 1e-3 \
   --min_lr 1e-5 \
-  --batch_size 2 \
-  --accumulation_steps 1 \
-  --num_steps 0 \
   --eval_every_x_epochs 1 \
-  --max_epochs 21 \
+  --max_epochs 101 \
   --warmup_epochs 3 \
   --normalize_eigenvalues \
   --normalize_forces \
-  --use_uncertainty_weights
+  --use_uncertainty_weights \
+  "$@"

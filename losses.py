@@ -125,8 +125,10 @@ def compute_weight_loss(
     is_transformed = (true_weights.min() < -0.1) or (true_weights.max() > 1.1)
 
     if is_transformed:
-        # Standard MSE in logit space
-        loss = F.mse_loss(pred_weights, true_weights)
+        # Standard MSE in logit space with peak focus
+        # true_weights > -6.0 corresponds to physical weights > 0.0025 (10x scaling for peaks)
+        weight_mask = torch.where(true_weights > -6.0, 5.0, 1.0)
+        loss = (weight_mask * (pred_weights - true_weights) ** 2).mean()
         with torch.no_grad():
             pred_weights_orig = torch.sigmoid(pred_weights)
             true_weights_orig = torch.sigmoid(true_weights)

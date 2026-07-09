@@ -74,10 +74,17 @@ def build_loss_weights(args: argparse.Namespace) -> dict[str, float]:
             raise ValueError("Equigrad loss is only available for conservative models.")
         loss_weights["rotational_grad"] = args.equigrad_loss_weight
 
-    if loss_weights:
+    # Log eigenvalues and weights weights if they are present in args
+    log_weights = dict(loss_weights)
+    if getattr(args, "eigenvalue_loss_weight", None) is not None:
+        log_weights["eigenvalues"] = args.eigenvalue_loss_weight
+    if getattr(args, "weight_loss_weight", None) is not None:
+        log_weights["weights"] = args.weight_loss_weight
+
+    if log_weights:
         logging.info("=" * 60)
         logging.info("Custom loss weights specified:")
-        for key, val in loss_weights.items():
+        for key, val in log_weights.items():
             logging.info(f"  {key}: {val}")
         logging.info("=" * 60)
 

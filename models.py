@@ -109,9 +109,9 @@ class WeightHead(nn.Module):
             nn.Linear(hidden_dim, num_bands),
         )
 
-        # Initialize the final linear bias so outputs start near 0.27
-        # in probability space (logit of ~ -1.0) — avoids extreme saturation.
-        nn.init.constant_(self.mlp[-1].bias, -1.0)
+        # Initialize bias near the true mean of logit targets (~-8.5)
+        # to prevent massive initial gradient shifts and accelerate convergence.
+        nn.init.constant_(self.mlp[-1].bias, -8.5)
 
     def forward(self, node_features: torch.Tensor, node_eigenvalues: torch.Tensor | None = None) -> torch.Tensor:
         x = self.node_norm(node_features)
