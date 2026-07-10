@@ -456,19 +456,27 @@ def finetune(
                     pred_energy = physics_out["energy"]
                     pred_forces = physics_out["forces"]
 
+                # Denormalize forces to physical units before adding residual/computing loss
+                pred_forces = model.heads["forces"].denormalize(pred_forces, batch)
+
                 # Apply force residual correction if available
                 if force_residual_head is not None:
                     force_correction = force_residual_head(node_features.detach())
                     pred_forces = pred_forces + force_correction
 
-                true_energy = batch.system_targets["energy"]
                 true_forces = batch.node_targets["forces"]
-
-                energy_loss, energy_diag = compute_energy_loss(pred_energy, true_energy)
                 forces_loss, force_diag = compute_force_loss(
                     pred_forces, true_forces,
                     std_forces=std_forces,
                 )
+
+                if energy_loss_weight > 0.0:
+                    pred_energy = model.heads["energy"].denormalize(pred_energy, batch)
+                    true_energy = batch.system_targets["energy"]
+                    energy_loss, energy_diag = compute_energy_loss(pred_energy, true_energy)
+                else:
+                    energy_loss = torch.tensor(0.0, device=device)
+                    energy_diag = {}
             else:
                 energy_loss = torch.tensor(0.0, device=device)
                 forces_loss = torch.tensor(0.0, device=device)
@@ -628,6 +636,9 @@ def evaluate_model(
             with torch.no_grad():
                 base_out = model(inputs)
                 pred_forces = base_out["forces"]
+
+        # Denormalize to physical units
+        pred_forces = model.heads["forces"].denormalize(pred_forces, inputs)
 
         with torch.no_grad():
             gnn_out = model.model(inputs)

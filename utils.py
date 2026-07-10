@@ -49,14 +49,23 @@ def split_train_val(
     val_fraction: float,
     seed: int,
 ) -> tuple[list[int], list[int]]:
-    """Generates random train/val split indices given a dataset size and validation fraction."""
+    """Generates a random block train/val split of size val_fraction to prevent leakage."""
     rng = np.random.RandomState(seed)
-    indices = rng.permutation(total_size).tolist()
     n_val = max(1, int(total_size * val_fraction))
-    val_indices = sorted(indices[:n_val])
-    train_indices = sorted(indices[n_val:])
+    
+    if total_size > n_val:
+        start_idx = rng.randint(0, total_size - n_val + 1)
+    else:
+        start_idx = 0
+        n_val = total_size
+
+    val_indices = list(range(start_idx, start_idx + n_val))
+    train_indices = [i for i in range(total_size) if i not in val_indices]
+    
     logging.info(
-        f"Train/val split: {len(train_indices)} train, {len(val_indices)} val "
+        f"Random block train/val split (validation block [{start_idx}, {start_idx + n_val})): "
+        f"{len(train_indices)} train, {len(val_indices)} val "
         f"({val_fraction:.0%} val, seed={seed})"
     )
     return train_indices, val_indices
+

@@ -463,7 +463,7 @@ def run(args: argparse.Namespace) -> None:
             logging.info("=" * 60)
 
             if wandb_run is not None:
-                wandb_run.log({
+                log_dict = {
                     "eval/eigs_rmse": eval_metrics["eigs_rmse"],
                     "eval/eigs_r2": eval_metrics["eigs_r2"],
                     "eval/weights_rmse": eval_metrics["weights_rmse"],
@@ -471,7 +471,8 @@ def run(args: argparse.Namespace) -> None:
                     "eval/forces_rmse": eval_metrics["forces_rmse"],
                     "eval/forces_r2": eval_metrics["forces_r2"],
                     "epoch": epoch,
-                })
+                }
+                wandb_run.log(log_dict)
 
             # Composite metric: sum of eigenvalue, weights, and force RMSE
             forces_val = eval_metrics["forces_rmse"] if not np.isnan(eval_metrics["forces_rmse"]) else 0.0

@@ -14,7 +14,7 @@ uv run python run_finetune.py \
   --lr 1e-3 \
   --min_lr 1e-5 \
   --eval_every_x_epochs 1 \
-  --max_epochs 101 \
+  --max_epochs 301 \
   --warmup_epochs 3 \
   --normalize_eigenvalues \
   --normalize_forces \
