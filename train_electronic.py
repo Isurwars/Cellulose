@@ -461,7 +461,7 @@ def run(args: argparse.Namespace) -> None:
             )
             logging.info(f"  Forces RMSE:      {forces_rmse_str} (R²: {forces_r2_str})")
             if "energy_rmse" in eval_metrics and not np.isnan(eval_metrics["energy_rmse"]):
-                logging.info(f"  Energy RMSE:      {eval_metrics['energy_rmse']:.4f} eV/atom (R²: {eval_metrics['energy_r2']:.4f})")
+                logging.info(f"  Energy RMSE:      {eval_metrics['energy_rmse']:.4f} eV (R²: {eval_metrics['energy_r2']:.4f})")
             logging.info("=" * 60)
 
             if wandb_run is not None:

@@ -137,7 +137,7 @@ def write_mace_dataset(filename, dataset):
             comment = (
                 f'Lattice="{lattice_str}" '
                 f'Properties={properties} '
-                f'energy={frame_data["energy"] / num_atoms:.8f} '
+                f'energy={frame_data["energy"]:.8f} '
                 f'eigen_energies="{energies_str}" '
                 f'pbc="T T T"'
             )
@@ -172,7 +172,7 @@ def create_orb_database(db_filename, dataset):
 
         calc = SinglePointCalculator(
             atoms=atoms,
-            energy=frame_data['energy'] / len(atoms),
+            energy=frame_data['energy'],
             forces=frame_data['forces']
         )
         atoms.calc = calc
@@ -189,6 +189,7 @@ def main():
     parser.add_argument("--pdos_dir", default="pdos_results", help="Directory containing pdos results")
     parser.add_argument("--out_db", default="cellulose.db", help="Path to output ASE SQLite database")
     parser.add_argument("--out_xyz", default="cellulose.xyz", help="Path to output Extended XYZ file")
+    parser.add_argument("--no-logit", action="store_true", help="Extract raw weights without logit transformation")
     args = parser.parse_args()
 
     frame_files = sorted(glob.glob(os.path.join(args.pdos_dir, "frame_*.castep")))
@@ -218,15 +219,30 @@ def main():
             pdos_data = castepxbin.read_pdos_bin(pdos_bin_path)
             weights = pdos_data['pdos_weights']
             ions = pdos_data['ion']
+            species_indices_pdos = pdos_data['species']
+
+            # Reconstruct global atom index by mapping local (species, ion) to global index
+            atoms_species = frame_data['species']
+            unique_species = []
+            for s in atoms_species:
+                if s not in unique_species:
+                    unique_species.append(s)
+            species_indices = {s: [idx for idx, sym in enumerate(atoms_species) if sym == s] for s in unique_species}
 
             # Create the (72, 250) map for this specific frame
             current_map = np.zeros((72, 250))
             for orbital_idx in range(204):
-                atom_idx = ions[orbital_idx] - 1
+                sp_idx = species_indices_pdos[orbital_idx] - 1
+                sym = unique_species[sp_idx]
+                ion_idx = ions[orbital_idx] - 1
+                atom_idx = species_indices[sym][ion_idx]
                 current_map[atom_idx, :] += weights[orbital_idx, :, 0, 0]
 
-            # Transform weights to logit space
-            transformed_map = transform_target(current_map)
+            if args.no_logit:
+                transformed_map = current_map
+            else:
+                # Transform weights to logit space
+                transformed_map = transform_target(current_map)
 
             # Convert eigenvalues from Hartree to eV for the energy axis
             eigen_energies_ev = frame_eigenvalues * 27.2114

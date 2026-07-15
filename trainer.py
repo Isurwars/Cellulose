@@ -472,7 +472,6 @@ def finetune(
 
                 if energy_loss_weight > 0.0:
                     pred_energy = model.heads["energy"].denormalize(pred_energy, batch)
-                    pred_energy = pred_energy / batch.n_node
                     true_energy = batch.system_targets["energy"]
                     energy_loss, energy_diag = compute_energy_loss(pred_energy, true_energy)
                 else:
@@ -657,7 +656,6 @@ def evaluate_model(
         if gt["energy"] is not None:
             pred_energy_val = base_out["energy"]
             pred_energy_val = model.heads["energy"].denormalize(pred_energy_val, inputs)
-            pred_energy_val = pred_energy_val / inputs.n_node
             results["energy_true"].append(gt["energy"])
             results["energy_pred"].append(pred_energy_val.detach().cpu().item())
 
