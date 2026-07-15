@@ -137,7 +137,7 @@ def write_mace_dataset(filename, dataset):
             comment = (
                 f'Lattice="{lattice_str}" '
                 f'Properties={properties} '
-                f'energy={frame_data["energy"]:.8f} '
+                f'energy={frame_data["energy"] / num_atoms:.8f} '
                 f'eigen_energies="{energies_str}" '
                 f'pbc="T T T"'
             )
@@ -172,7 +172,7 @@ def create_orb_database(db_filename, dataset):
 
         calc = SinglePointCalculator(
             atoms=atoms,
-            energy=frame_data['energy'],
+            energy=frame_data['energy'] / len(atoms),
             forces=frame_data['forces']
         )
         atoms.calc = calc

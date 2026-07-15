@@ -1,8 +1,8 @@
 uv run python run_finetune.py \
-  --data_path cellulose.db \
+  --data_path cellulose_per_atom.db \
   --base_model orb_v3_direct_omol \
   --custom_reference_energies refs.json \
-  --energy_loss_weight 0.0 \
+  --energy_loss_weight 0.1 \
   --stress_loss_weight 0.0 \
   --forces_loss_weight 0.1 \
   --eigenvalue_loss_weight 0.01 \

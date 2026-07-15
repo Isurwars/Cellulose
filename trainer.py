@@ -472,6 +472,7 @@ def finetune(
 
                 if energy_loss_weight > 0.0:
                     pred_energy = model.heads["energy"].denormalize(pred_energy, batch)
+                    pred_energy = pred_energy / batch.n_node
                     true_energy = batch.system_targets["energy"]
                     energy_loss, energy_diag = compute_energy_loss(pred_energy, true_energy)
                 else:
@@ -614,6 +615,7 @@ def evaluate_model(
         "forces_true": [], "forces_pred": [],
         "eigs_true": [], "eigs_pred": [],
         "weights_true": [], "weights_pred": [],
+        "energy_true": [], "energy_pred": [],
     }
 
     frames_to_eval = eval_frames[:100] if fast_eval else eval_frames
@@ -651,6 +653,13 @@ def evaluate_model(
 
         results["forces_true"].append(gt["forces"])
         results["forces_pred"].append(pred_forces.detach().cpu().numpy())
+
+        if gt["energy"] is not None:
+            pred_energy_val = base_out["energy"]
+            pred_energy_val = model.heads["energy"].denormalize(pred_energy_val, inputs)
+            pred_energy_val = pred_energy_val / inputs.n_node
+            results["energy_true"].append(gt["energy"])
+            results["energy_pred"].append(pred_energy_val.detach().cpu().item())
 
         with torch.no_grad():
             graph_idx = build_graph_index(inputs.n_node, node_feats.device)
@@ -702,6 +711,15 @@ def evaluate_model(
     w_var = np.var(w_true)
     weights_r2 = float(1.0 - np.mean((w_true - w_pred) ** 2) / w_var) if w_var > 1e-8 else 0.0
 
+    energy_rmse = float("nan")
+    energy_r2 = float("nan")
+    if len(results["energy_true"]) > 0:
+        e_true = np.array(results["energy_true"])
+        e_pred = np.array(results["energy_pred"])
+        energy_rmse = float(np.sqrt(np.mean((e_true - e_pred) ** 2)))
+        e_var = np.var(e_true)
+        energy_r2 = float(1.0 - np.mean((e_true - e_pred) ** 2) / e_var) if e_var > 1e-8 else 0.0
+
     if plot_path is not None:
         _save_parity_plots(
             eig_true, eig_pred, eigs_rmse, eigs_r2,
@@ -717,6 +735,8 @@ def evaluate_model(
         "eigs_r2": eigs_r2,
         "weights_rmse": weights_rmse,
         "weights_r2": weights_r2,
+        "energy_rmse": energy_rmse,
+        "energy_r2": energy_r2,
     }
 
 

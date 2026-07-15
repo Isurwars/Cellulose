@@ -460,6 +460,8 @@ def run(args: argparse.Namespace) -> None:
                 else "N/A"
             )
             logging.info(f"  Forces RMSE:      {forces_rmse_str} (R²: {forces_r2_str})")
+            if "energy_rmse" in eval_metrics and not np.isnan(eval_metrics["energy_rmse"]):
+                logging.info(f"  Energy RMSE:      {eval_metrics['energy_rmse']:.4f} eV/atom (R²: {eval_metrics['energy_r2']:.4f})")
             logging.info("=" * 60)
 
             if wandb_run is not None:
@@ -472,6 +474,9 @@ def run(args: argparse.Namespace) -> None:
                     "eval/forces_r2": eval_metrics["forces_r2"],
                     "epoch": epoch,
                 }
+                if "energy_rmse" in eval_metrics and not np.isnan(eval_metrics["energy_rmse"]):
+                    log_dict["eval/energy_rmse"] = eval_metrics["energy_rmse"]
+                    log_dict["eval/energy_r2"] = eval_metrics["energy_r2"]
                 wandb_run.log(log_dict)
 
             # Composite metric: sum of eigenvalue, weights, and force RMSE
