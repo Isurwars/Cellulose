@@ -246,9 +246,20 @@ class LocalSubgraphsDataset(torch.utils.data.Dataset):
             graph_targets["energy_per_atom"] = torch.tensor([e_avg_excess], dtype=torch.float32)
             
         sub_atoms.info = {
+            "graph_features": copy.deepcopy(parent_atoms.info.get("graph_features", {})),
+            "edge_features": copy.deepcopy(parent_atoms.info.get("edge_features", {})),
+            "node_features": {},
             "node_targets": node_targets,
+            "edge_targets": copy.deepcopy(parent_atoms.info.get("edge_targets", {})),
             "graph_targets": graph_targets,
         }
+        
+        if "node_features" in parent_atoms.info:
+            for feat_name, feat_val in parent_atoms.info["node_features"].items():
+                if hasattr(feat_val, "__getitem__"):
+                    sub_atoms.info["node_features"][feat_name] = feat_val[neighbor_indices]
+                else:
+                    sub_atoms.info["node_features"][feat_name] = feat_val
         
         for augmentation in self.base_dataset.augmentations:
             augmentation(sub_atoms)

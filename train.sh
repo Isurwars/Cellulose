@@ -1,5 +1,5 @@
 uv run python run_finetune.py \
-  --data_path cellulose_per_atom.db \
+  --data_path cellulose.db \
   --base_model orb_v3_direct_omol \
   --custom_reference_energies refs.json \
   --energy_loss_weight 0.1 \
@@ -14,7 +14,7 @@ uv run python run_finetune.py \
   --lr 1e-3 \
   --min_lr 1e-5 \
   --eval_every_x_epochs 1 \
-  --max_epochs 301 \
+  --max_epochs 21 \
   --warmup_epochs 3 \
   --normalize_eigenvalues \
   --normalize_forces \

@@ -472,37 +472,37 @@ wheels = [
 
 [package.optional-dependencies]
 cublas = [
-    { name = "nvidia-cublas", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+    { name = "nvidia-cublas" },
 ]
 cudart = [
-    { name = "nvidia-cuda-runtime", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+    { name = "nvidia-cuda-runtime" },
 ]
 cufft = [
-    { name = "nvidia-cufft", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+    { name = "nvidia-cufft" },
 ]
 cufile = [
-    { name = "nvidia-cufile", marker = "sys_platform == 'linux'" },
+    { name = "nvidia-cufile" },
 ]
 cupti = [
-    { name = "nvidia-cuda-cupti", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+    { name = "nvidia-cuda-cupti" },
 ]
 curand = [
-    { name = "nvidia-curand", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+    { name = "nvidia-curand" },
 ]
 cusolver = [
-    { name = "nvidia-cusolver", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+    { name = "nvidia-cusolver" },
 ]
 cusparse = [
-    { name = "nvidia-cusparse", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+    { name = "nvidia-cusparse" },
 ]
 nvjitlink = [
-    { name = "nvidia-nvjitlink", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+    { name = "nvidia-nvjitlink" },
 ]
 nvrtc = [
-    { name = "nvidia-cuda-nvrtc", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+    { name = "nvidia-cuda-nvrtc" },
 ]
 nvtx = [
-    { name = "nvidia-nvtx", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+    { name = "nvidia-nvtx" },
 ]
 
 [[package]]
@@ -1442,7 +1442,7 @@ wheels = [
 
 [[package]]
 name = "orb-models"
-version = "0.6.2"
+version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ase" },
@@ -1453,9 +1453,9 @@ dependencies = [
     { name = "torch" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/aa/89/3acc72151bd7fc5f735c7e838c4bf7a81df0e2259529f66148dbfb01b481/orb_models-0.6.2.tar.gz", hash = "sha256:2965c533e1917acc578ffcb3bb46f7ce982ebbf35648a64bb178cb8bbad38a74", size = 395208, upload-time = "2026-03-18T16:19:19.438Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/da/c3/c6feb4cd02adcb6097f3b08500399395207d438a3e01f09d92f1577e27b7/orb_models-0.7.0.tar.gz", hash = "sha256:61573b9c3a1a6eade590b72d5abd5fa4280e7185a8f9f0ed2e9b59335a9276dd", size = 404035, upload-time = "2026-05-26T15:06:44.841Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/96/e8/417af39c42d95d7ed0940d4264c88b680b7f4d49ac4b064c7548070c954f/orb_models-0.6.2-py3-none-any.whl", hash = "sha256:4f1dd752de1d964e6cc835570522914678537227491acdd5b2c8ff4538a5a44b", size = 407490, upload-time = "2026-03-18T16:19:18.054Z" },
+    { url = "https://files.pythonhosted.org/packages/03/1d/8e61628ffea42a56c0f8bc251e71344d7e2c43bc61f0e43dae22a1ca8ce6/orb_models-0.7.0-py3-none-any.whl", hash = "sha256:b8e83f16ebddc9fd24a20b45062422c2ed2eb2bf07c34eeea06567975b4cf636", size = 416165, upload-time = "2026-05-26T15:06:43.317Z" },
 ]
 
 [[package]]

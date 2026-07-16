@@ -456,9 +456,6 @@ def finetune(
                     pred_energy = physics_out["energy"]
                     pred_forces = physics_out["forces"]
 
-                # Denormalize forces to physical units before adding residual/computing loss
-                pred_forces = model.heads["forces"].denormalize(pred_forces, batch)
-
                 # Apply force residual correction if available
                 if force_residual_head is not None:
                     force_correction = force_residual_head(node_features.detach())
@@ -471,7 +468,7 @@ def finetune(
                 )
 
                 if energy_loss_weight > 0.0:
-                    pred_energy = model.heads["energy"].denormalize(pred_energy, batch)
+                    pred_energy = model.heads["energy"].absolute_energy(pred_energy, batch, fp64=False)
                     true_energy = batch.system_targets["energy"]
                     energy_loss, energy_diag = compute_energy_loss(pred_energy, true_energy)
                 else:
@@ -638,8 +635,7 @@ def evaluate_model(
                 base_out = model(inputs)
                 pred_forces = base_out["forces"]
 
-        # Denormalize to physical units
-        pred_forces = model.heads["forces"].denormalize(pred_forces, inputs)
+        # Forces are already in physical units (eV/Å)
 
         with torch.no_grad():
             gnn_out = model.model(inputs)
@@ -655,7 +651,7 @@ def evaluate_model(
 
         if gt["energy"] is not None:
             pred_energy_val = base_out["energy"]
-            pred_energy_val = model.heads["energy"].denormalize(pred_energy_val, inputs)
+            pred_energy_val = model.heads["energy"].absolute_energy(pred_energy_val, inputs, fp64=True)
             results["energy_true"].append(gt["energy"])
             results["energy_pred"].append(pred_energy_val.detach().cpu().item())
 
