@@ -302,6 +302,11 @@ def run(args: argparse.Namespace) -> None:
             else:
                 logging.warning("No forces found in training set. Force normalization disabled.")
 
+    # Load CPU reference energies for the local dataset if needed
+    ref_energies_cpu = None
+    if args.use_local_graphs and args.custom_reference_energies:
+        ref_energies_cpu = data.load_custom_reference_energies(args.custom_reference_energies)
+
     train_loader = data.build_train_loader(
         dataset_name=args.dataset,
         dataset_path=args.data_path,
@@ -311,6 +316,12 @@ def run(args: argparse.Namespace) -> None:
         atoms_adapter=atoms_adapter,
         augmentation=True,
         train_indices=train_indices,
+        use_local_graphs=args.use_local_graphs,
+        local_cutoff=args.local_cutoff,
+        ref_energies=ref_energies_cpu,
+        eigenvalue_mode=args.eigenvalue_mode,
+        eigenvalue_threshold=args.eigenvalue_threshold,
+        local_pbc=args.local_pbc,
     )
 
     eval_frames: list[tuple[Any, dict[str, Any]]] = []
@@ -325,7 +336,20 @@ def run(args: argparse.Namespace) -> None:
             target_config=target_property_config,
             augmentations=[],
         )
-        eval_frames = data.cache_eval_frames(eval_dataset, val_indices=val_indices)
+        if args.use_local_graphs:
+            eval_dataset = data.LocalSubgraphsDataset(
+                eval_dataset,
+                cutoff=args.local_cutoff,
+                ref_energies=ref_energies_cpu,
+                eigenvalue_mode=args.eigenvalue_mode,
+                eigenvalue_threshold=args.eigenvalue_threshold,
+                local_pbc=args.local_pbc,
+                indices=val_indices,
+            )
+            # Since eval_dataset is already filtered by val_indices, we cache all of it
+            eval_frames = data.cache_eval_frames(eval_dataset, val_indices=None)
+        else:
+            eval_frames = data.cache_eval_frames(eval_dataset, val_indices=val_indices)
 
     # --- Training loop ---
     logging.info("Starting training!")
@@ -574,6 +598,13 @@ def main() -> None:
     parser.add_argument("--detach_coupling", action="store_true", help="Detach the predicted eigenvalues before feeding them to the weight head to prevent weight gradients from flowing back to the eigenvalue head.")
     parser.add_argument("--use_force_residual", action="store_true", help="Use ForceResidualHead to learn domain-specific force corrections.")
     parser.add_argument("--use_uncertainty_weights", action="store_true", help="Use learnable uncertainty weights to scale loss terms dynamically.")
+    
+    # Local subgraphs arguments (Plan B)
+    parser.add_argument("--no_local_graphs", action="store_false", dest="use_local_graphs", help="Disable local subgraph training.")
+    parser.add_argument("--local_cutoff", default=6.0, type=float, help="Cutoff radius in Å for local neighbor environments.")
+    parser.add_argument("--eigenvalue_mode", default="filtered", choices=["raw", "weighted", "filtered"], help="Mode for local eigenvalues computation.")
+    parser.add_argument("--eigenvalue_threshold", default=0.15, type=float, help="Threshold for filtered local eigenvalues.")
+    parser.add_argument("--no_local_pbc", action="store_false", dest="local_pbc", help="Disable periodic boundary conditions in local subgraphs (use Cluster Mode).")
 
     args, _ = parser.parse_known_args()
     run(args)
