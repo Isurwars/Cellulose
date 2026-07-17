@@ -17,6 +17,10 @@ export HF_HOME="$(pwd)/.cache/huggingface"
 export TORCH_HOME="$(pwd)/.cache/torch"
 export MPLCONFIGDIR="$(pwd)/.cache/matplotlib"
 
+# Disable torch.compile (dynamo/inductor) since compute nodes lack a C++ compiler
+export TORCHDYNAMO_DISABLE=1
+
+
 
 uv run python run_finetune.py \
   --data_path cellulose.db \
