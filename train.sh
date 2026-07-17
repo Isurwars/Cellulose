@@ -1,3 +1,13 @@
+# Optimize PyTorch CPU performance on many-core systems (avoid thread oversubscription thrashing)
+export OMP_NUM_THREADS=32
+export MKL_NUM_THREADS=32
+export OPENBLAS_NUM_THREADS=32
+export VECLIB_MAXIMUM_THREADS=32
+export NUMEXPR_NUM_THREADS=32
+
+# CPU thread pinning optimizations (improves cache locality)
+export KMP_AFFINITY="granularity=fine,compact,1,0"
+
 uv run python run_finetune.py \
   --data_path cellulose.db \
   --base_model orb_v3_direct_omol \
@@ -19,4 +29,7 @@ uv run python run_finetune.py \
   --normalize_eigenvalues \
   --normalize_forces \
   --use_uncertainty_weights \
+  --batch_size 16 \
+  --accumulation_steps 2 \
+  --num_workers 16 \
   "$@"

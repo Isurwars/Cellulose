@@ -14,6 +14,8 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import sys
+import traceback
 from collections import Counter
 from datetime import datetime
 from typing import Any
@@ -51,6 +53,16 @@ from trainer import (
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 
 
+class FsyncFileHandler(logging.FileHandler):
+    def emit(self, record):
+        super().emit(record)
+        self.flush()
+        try:
+            os.fsync(self.stream.fileno())
+        except Exception:
+            pass
+
+
 def setup_logging(log_dir: str) -> str:
     """Configure logging to write to both console and a timestamped logfile.
 
@@ -59,6 +71,7 @@ def setup_logging(log_dir: str) -> str:
     os.makedirs(log_dir, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_path = os.path.join(log_dir, f"training_{timestamp}.log")
+    err_path = os.path.join(log_dir, f"training_{timestamp}.err")
 
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.INFO)
@@ -76,7 +89,32 @@ def setup_logging(log_dir: str) -> str:
     file_handler.setFormatter(logging.Formatter(LOG_FORMAT))
     root_logger.addHandler(file_handler)
 
+    err_handler = FsyncFileHandler(err_path, mode="w")
+    err_handler.setLevel(logging.WARNING)
+    err_handler.setFormatter(logging.Formatter(LOG_FORMAT))
+    root_logger.addHandler(err_handler)
+
+    def handle_exception(exc_type, exc_value, exc_traceback):
+        if issubclass(exc_type, KeyboardInterrupt):
+            sys.__excepthook__(exc_type, exc_value, exc_traceback)
+            return
+
+        logging.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+
+        try:
+            with open(err_path, "a") as f:
+                traceback.print_exception(exc_type, exc_value, exc_traceback, file=f)
+                f.flush()
+                os.fsync(f.fileno())
+        except Exception:
+            pass
+
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+
+    sys.excepthook = handle_exception
+
     logging.info(f"Logging to: {log_path}")
+    logging.info(f"Warnings and errors will be logged to: {err_path}")
     return log_path
 
 LATENT_DIM: int = 256
@@ -258,6 +296,30 @@ def run(args: argparse.Namespace) -> None:
         )
         train_indices = train_idx_list
         val_indices = set(val_idx_list)
+
+    if args.data_fraction < 1.0:
+        db = ase.db.connect(args.data_path)
+        total_size = db.count()
+        if train_indices is None:
+            train_indices = list(range(total_size))
+        
+        # Subsample training indices
+        rng = np.random.RandomState(args.random_seed)
+        n_train_sub = max(1, int(len(train_indices) * args.data_fraction))
+        train_indices = sorted([int(x) for x in rng.choice(train_indices, size=n_train_sub, replace=False)])
+        
+        # Subsample validation indices
+        if val_indices is not None and len(val_indices) > 0:
+            val_idx_list = sorted(list(val_indices))
+            n_val_sub = max(1, int(len(val_idx_list) * args.data_fraction))
+            val_indices = set(int(x) for x in rng.choice(val_idx_list, size=n_val_sub, replace=False))
+        else:
+            val_indices = set()
+            
+        logging.info(
+            f"Subsampled dataset using data_fraction={args.data_fraction:.2f}: "
+            f"{len(train_indices)} train, {len(val_indices)} val"
+        )
 
     mean_eigenvalues: torch.Tensor | None = None
     std_eigenvalues: torch.Tensor | None = None
@@ -593,6 +655,7 @@ def main() -> None:
     parser.add_argument("--weight_loss_weight", default=1.0, type=float, help="Loss weight scaling factor for PDOS weights.")
     parser.add_argument("--eval_every_x_epochs", default=1, type=int, help="Frequency of running evaluation on cached database frames. Set to 0 to disable.")
     parser.add_argument("--val_fraction", default=0.1, type=float, help="Fraction of data to hold out for validation (0.0 = train on all, evaluate on all).")
+    parser.add_argument("--data_fraction", default=1.0, type=float, help="Fraction of the dataset to use for training/validation (useful for debugging).")
     parser.add_argument("--dropout", default=0.1, type=float, help="Dropout rate in the heads (0.0 to disable).")
     parser.add_argument("--no_couple_heads", action="store_false", dest="couple_heads", help="Do not couple the eigenvalue head to the weight head.")
     parser.add_argument("--detach_coupling", action="store_true", help="Detach the predicted eigenvalues before feeding them to the weight head to prevent weight gradients from flowing back to the eigenvalue head.")

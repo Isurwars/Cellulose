@@ -16,3 +16,7 @@ dependencies = [
     "torch-scatter>=2.1.2",
 ]
 
+[tool.uv.extra-build-dependencies]
+torch-scatter = ["torch"]
+
+
