@@ -8,6 +8,16 @@ export NUMEXPR_NUM_THREADS=32
 # CPU thread pinning optimizations (improves cache locality)
 export KMP_AFFINITY="granularity=fine,compact,1,0"
 
+# Redirect Warp cache directory to avoid Permission denied on /home/isurwars
+export WARP_CACHE_PATH="$(pwd)/.cache/warp"
+
+# Redirect all other common machine learning cache directories to the project folder
+export CACHED_PATH_CACHE_ROOT="$(pwd)/.cache/cached_path"
+export HF_HOME="$(pwd)/.cache/huggingface"
+export TORCH_HOME="$(pwd)/.cache/torch"
+export MPLCONFIGDIR="$(pwd)/.cache/matplotlib"
+
+
 uv run python run_finetune.py \
   --data_path cellulose.db \
   --base_model orb_v3_direct_omol \
