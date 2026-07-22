@@ -1,10 +1,10 @@
-# @file train_electronic.py
+# @file train.py
 # @copyright Copyright © 2026 Isaías Rodríguez (isurwars@gmail.com)
 # @par License
 # SPDX-License-Identifier: AGPL-3.0-only
 
 """
-train_electronic.py — Electronic Structure Finetuning CLI Entrypoint
+train.py — Electronic Structure Finetuning CLI Entrypoint
 
 Refactored to import sub-modules: utils, losses, models, data, trainer.
 """

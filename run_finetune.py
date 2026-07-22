@@ -163,7 +163,7 @@ def main() -> None:
     os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 
     # Launch PyTorch training
-    target_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "train_electronic.py")
+    target_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "train.py")
     logging.info(f"Launching training process: {sys.executable} {target_script} {' '.join(final_args)}")
     try:
         subprocess.run([sys.executable, target_script] + final_args, check=True)
