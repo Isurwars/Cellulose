@@ -3,24 +3,26 @@ from typing import Any
 import numpy as np
 import torch
 
-def scatter_sum(src: torch.Tensor, index: torch.Tensor, dim: int = 0) -> torch.Tensor:
+def scatter_sum(src: torch.Tensor, index: torch.Tensor, dim: int = 0, dim_size: int | None = None) -> torch.Tensor:
     """Computes the sum of all elements in the src tensor grouped by index.
 
     Equivalent to torch_scatter.scatter_add.
     """
-    dim_size = int(index.max().item()) + 1
+    if dim_size is None:
+        dim_size = int(index.max().item()) + 1
     out = src.new_zeros((dim_size, src.size(1)))
     out.index_add_(dim, index, src)
     return out
 
 
-def scatter_mean(src: torch.Tensor, index: torch.Tensor, dim: int = 0) -> torch.Tensor:
+def scatter_mean(src: torch.Tensor, index: torch.Tensor, dim: int = 0, dim_size: int | None = None) -> torch.Tensor:
     """Computes the mean values of all elements in the src tensor grouped by index.
 
     Equivalent to torch_scatter.scatter_mean.  Uses integer counts for
     numerical stability on large graphs.
     """
-    dim_size = int(index.max().item()) + 1
+    if dim_size is None:
+        dim_size = int(index.max().item()) + 1
     out = src.new_zeros((dim_size, src.size(1)))
     out.index_add_(dim, index, src)
     # Integer counts avoid float rounding drift

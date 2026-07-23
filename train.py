@@ -154,7 +154,7 @@ def _format_lr_summary(optimizer: torch.optim.Optimizer) -> str:
 
 def run(args: argparse.Namespace) -> None:
     """Top-level training orchestrator."""
-    log_path = setup_logging(args.checkpoint_path)
+    setup_logging(args.checkpoint_path)
     logging.info(f"Full configuration: {vars(args)}")
 
     device = init_device(device_id=args.device_id)
@@ -586,7 +586,7 @@ def run(args: argparse.Namespace) -> None:
                     uncertainty_weighting=uncertainty_weighting,
                 )
 
-            is_unfrozen = args.unfreeze_epoch is None or epoch >= args.unfrozen_epoch if hasattr(args, 'unfrozen_epoch') else args.unfreeze_epoch is None or epoch >= args.unfreeze_epoch
+            is_unfrozen = args.unfreeze_epoch is None or epoch >= args.unfreeze_epoch
             exploding_eigs = eval_metrics["eigs_rmse"] > 5.0
             exploding_forces = (
                 not np.isnan(eval_metrics["forces_rmse"]) and eval_metrics["forces_rmse"] > 2.0

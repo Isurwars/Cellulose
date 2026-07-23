@@ -1,7 +1,6 @@
 import argparse
 import logging
 import os
-import re
 from typing import Any
 import numpy as np
 import matplotlib
@@ -24,7 +23,7 @@ from orb_models.common.atoms.abstract_atoms_adapter import AbstractAtomsAdapter
 
 from utils import build_graph_index, prefix_keys
 from losses import compute_electronic_losses, compute_force_loss, compute_energy_loss
-from models import AttentionPool, ForceResidualHead, WeightHead
+from models import AttentionPool, ForceResidualHead
 
 
 class UncertaintyLossWeighting(nn.Module):
@@ -415,8 +414,9 @@ def finetune(
             gnn_out = model.model(batch)
             node_features = gnn_out["node_features"]
 
+            num_graphs = len(batch.n_node)
             graph_idx = build_graph_index(batch.n_node, node_features.device)
-            graph_features = attention_pool(node_features, graph_idx)
+            graph_features = attention_pool(node_features, graph_idx, num_graphs=num_graphs)
 
             pred_eigenvalues = eigenvalue_head(graph_features)
 
@@ -656,8 +656,9 @@ def evaluate_model(
             results["energy_pred"].append(pred_energy_val.detach().cpu().item())
 
         with torch.no_grad():
+            num_graphs = len(inputs.n_node)
             graph_idx = build_graph_index(inputs.n_node, node_feats.device)
-            graph_feats = attention_pool(node_feats, graph_idx)
+            graph_feats = attention_pool(node_feats, graph_idx, num_graphs=num_graphs)
 
             pred_eigs_tensor = eigenvalue_head(graph_feats)
             if couple_heads:

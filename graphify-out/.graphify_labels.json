@@ -1,1 +1,20 @@
-{"0": "Training Execution and Logging", "1": "Model Fine-tuning and Evaluation", "2": "build_train_loader", "3": "build_heads", "4": "losses.py", "5": "train.sh", "6": "extract_pdos.py", "7": "Global Agent Directives", "8": "run_finetune.py", "9": "Contributing Guide", "10": "Security Policy", "11": "cellulose"}
+{
+  "0": "Training Execution and Logging",
+  "1": "Model Fine-tuning and Evaluation",
+  "2": "build_train_loader",
+  "3": "build_heads",
+  "4": "losses.py",
+  "5": "train.sh",
+  "6": "extract_pdos.py",
+  "7": "Global Agent Directives",
+  "8": "run_finetune.py",
+  "9": "Contributing Guide",
+  "10": "Security Policy",
+  "11": "cellulose",
+  "12": "Python & PyTorch Coding Standards",
+  "13": "Caveman Communication & Token Economy Protocol",
+  "14": "Graphify Automation & Sync Protocol",
+  "15": "Execution Pipeline",
+  "16": "Test-and-Tea Loop",
+  "17": "README.md"
+}

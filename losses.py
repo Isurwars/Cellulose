@@ -117,12 +117,14 @@ def compute_weight_loss(
     pred_weights: torch.Tensor,
     true_weights: torch.Tensor,
     device: torch.device,
+    is_transformed: bool | None = None,
     **kwargs,
 ) -> tuple[torch.Tensor, dict[str, float]]:
     """Computes weight loss. Uses standard MSE loss for logit-transformed targets,
     and falls back to fractional Binary Cross Entropy (BCE) with logits otherwise.
     """
-    is_transformed = (true_weights.min() < -0.1) or (true_weights.max() > 1.1)
+    if is_transformed is None:
+        is_transformed = bool((true_weights.min() < -0.1) or (true_weights.max() > 1.1))
 
     if is_transformed:
         # Standard MSE in logit space with peak focus
@@ -162,6 +164,7 @@ def compute_electronic_losses(
     pred_weights: torch.Tensor,
     true_weights: torch.Tensor,
     device: torch.device,
+    is_transformed: bool | None = None,
     **kwargs,
 ) -> tuple[torch.Tensor, torch.Tensor, dict[str, float]]:
     """Orchestrates standard MSE loss computation for eigenvalues and logit-space PDOS weights."""
@@ -170,7 +173,7 @@ def compute_electronic_losses(
     )
 
     weight_loss, weight_diag = compute_weight_loss(
-        pred_weights, true_weights, device,
+        pred_weights, true_weights, device, is_transformed=is_transformed, **kwargs
     )
 
     # Merge diagnostics

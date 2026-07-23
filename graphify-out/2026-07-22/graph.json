@@ -54,9 +54,10 @@
       "source_file": "data.py",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "data",
       "community": 2,
-      "norm_label": "data.py"
+      "norm_label": "data.py",
+      "id": "data",
+      "community_name": "build_train_loader"
     },
     {
       "label": "extract_eigenvalues()",
@@ -64,9 +65,10 @@
       "source_file": "data.py",
       "source_location": "L20",
       "_origin": "ast",
-      "id": "data_extract_eigenvalues",
       "community": 2,
-      "norm_label": "extract_eigenvalues()"
+      "norm_label": "extract_eigenvalues()",
+      "id": "data_extract_eigenvalues",
+      "community_name": "build_train_loader"
     },
     {
       "label": "Any",
@@ -74,9 +76,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "data_py_any",
       "community": 2,
-      "norm_label": "any"
+      "norm_label": "any",
+      "id": "data_py_any",
+      "community_name": "build_train_loader"
     },
     {
       "label": "Tensor",
@@ -84,9 +87,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "data_py_tensor",
       "community": 2,
-      "norm_label": "tensor"
+      "norm_label": "tensor",
+      "id": "data_py_tensor",
+      "community_name": "build_train_loader"
     },
     {
       "label": "extract_weights()",
@@ -94,9 +98,10 @@
       "source_file": "data.py",
       "source_location": "L25",
       "_origin": "ast",
-      "id": "data_extract_weights",
       "community": 2,
-      "norm_label": "extract_weights()"
+      "norm_label": "extract_weights()",
+      "id": "data_extract_weights",
+      "community_name": "build_train_loader"
     },
     {
       "label": "load_custom_reference_energies()",
@@ -104,9 +109,10 @@
       "source_file": "data.py",
       "source_location": "L45",
       "_origin": "ast",
-      "id": "data_load_custom_reference_energies",
       "community": 2,
-      "norm_label": "load_custom_reference_energies()"
+      "norm_label": "load_custom_reference_energies()",
+      "id": "data_load_custom_reference_energies",
+      "community_name": "build_train_loader"
     },
     {
       "label": "LocalSubgraphsDataset",
@@ -114,9 +120,10 @@
       "source_file": "data.py",
       "source_location": "L98",
       "_origin": "ast",
-      "id": "data_localsubgraphsdataset",
       "community": 2,
-      "norm_label": "localsubgraphsdataset"
+      "norm_label": "localsubgraphsdataset",
+      "id": "data_localsubgraphsdataset",
+      "community_name": "build_train_loader"
     },
     {
       "label": ".__init__()",
@@ -124,9 +131,10 @@
       "source_file": "data.py",
       "source_location": "L102",
       "_origin": "ast",
-      "id": "data_localsubgraphsdataset_init",
       "community": 2,
-      "norm_label": ".__init__()"
+      "norm_label": ".__init__()",
+      "id": "data_localsubgraphsdataset_init",
+      "community_name": "build_train_loader"
     },
     {
       "label": "AseSqliteDataset",
@@ -134,9 +142,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "asesqlitedataset",
       "community": 2,
-      "norm_label": "asesqlitedataset"
+      "norm_label": "asesqlitedataset",
+      "id": "asesqlitedataset",
+      "community_name": "build_train_loader"
     },
     {
       "label": ".__len__()",
@@ -144,9 +153,10 @@
       "source_file": "data.py",
       "source_location": "L131",
       "_origin": "ast",
-      "id": "data_localsubgraphsdataset_len",
       "community": 2,
-      "norm_label": ".__len__()"
+      "norm_label": ".__len__()",
+      "id": "data_localsubgraphsdataset_len",
+      "community_name": "build_train_loader"
     },
     {
       "label": ".__getitem__()",
@@ -154,9 +164,10 @@
       "source_file": "data.py",
       "source_location": "L134",
       "_origin": "ast",
-      "id": "data_localsubgraphsdataset_getitem",
       "community": 2,
-      "norm_label": ".__getitem__()"
+      "norm_label": ".__getitem__()",
+      "id": "data_localsubgraphsdataset_getitem",
+      "community_name": "build_train_loader"
     },
     {
       "label": "build_train_loader()",
@@ -164,9 +175,10 @@
       "source_file": "data.py",
       "source_location": "L278",
       "_origin": "ast",
-      "id": "data_build_train_loader",
       "community": 2,
-      "norm_label": "build_train_loader()"
+      "norm_label": "build_train_loader()",
+      "id": "data_build_train_loader",
+      "community_name": "build_train_loader"
     },
     {
       "label": "AbstractAtomsAdapter",
@@ -174,9 +186,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "data_py_abstractatomsadapter",
       "community": 2,
-      "norm_label": "abstractatomsadapter"
+      "norm_label": "abstractatomsadapter",
+      "id": "data_py_abstractatomsadapter",
+      "community_name": "build_train_loader"
     },
     {
       "label": "DataLoader",
@@ -184,9 +197,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "dataloader",
       "community": 2,
-      "norm_label": "dataloader"
+      "norm_label": "dataloader",
+      "id": "dataloader",
+      "community_name": "build_train_loader"
     },
     {
       "label": "cache_eval_frames()",
@@ -194,9 +208,10 @@
       "source_file": "data.py",
       "source_location": "L349",
       "_origin": "ast",
-      "id": "data_cache_eval_frames",
       "community": 2,
-      "norm_label": "cache_eval_frames()"
+      "norm_label": "cache_eval_frames()",
+      "id": "data_cache_eval_frames",
+      "community_name": "build_train_loader"
     },
     {
       "label": "Return the 250 CASTEP Kohn-Sham eigenvalues for a structure as float32.",
@@ -204,9 +219,10 @@
       "source_file": "data.py",
       "source_location": "L21",
       "_origin": "ast",
-      "id": "data_rationale_21",
       "community": 2,
-      "norm_label": "return the 250 castep kohn-sham eigenvalues for a structure as float32."
+      "norm_label": "return the 250 castep kohn-sham eigenvalues for a structure as float32.",
+      "id": "data_rationale_21",
+      "community_name": "build_train_loader"
     },
     {
       "label": "Return the per-atom 250-band PDOS weight vector for a structure as float32.",
@@ -214,9 +230,10 @@
       "source_file": "data.py",
       "source_location": "L26",
       "_origin": "ast",
-      "id": "data_rationale_26",
       "community": 2,
-      "norm_label": "return the per-atom 250-band pdos weight vector for a structure as float32."
+      "norm_label": "return the per-atom 250-band pdos weight vector for a structure as float32.",
+      "id": "data_rationale_26",
+      "community_name": "build_train_loader"
     },
     {
       "label": "Load custom reference energies from a file.      Supports two formats:       1.",
@@ -224,9 +241,10 @@
       "source_file": "data.py",
       "source_location": "L46",
       "_origin": "ast",
-      "id": "data_rationale_46",
       "community": 2,
-      "norm_label": "load custom reference energies from a file.      supports two formats:       1."
+      "norm_label": "load custom reference energies from a file.      supports two formats:       1.",
+      "id": "data_rationale_46",
+      "community_name": "build_train_loader"
     },
     {
       "label": "Wraps an AseSqliteDataset to extract local neighbor environments (subgraphs)",
@@ -234,9 +252,10 @@
       "source_file": "data.py",
       "source_location": "L99",
       "_origin": "ast",
-      "id": "data_rationale_99",
       "community": 2,
-      "norm_label": "wraps an asesqlitedataset to extract local neighbor environments (subgraphs)"
+      "norm_label": "wraps an asesqlitedataset to extract local neighbor environments (subgraphs)",
+      "id": "data_rationale_99",
+      "community_name": "build_train_loader"
     },
     {
       "label": "Build the training DataLoader from an ASE SQLite database.",
@@ -244,9 +263,10 @@
       "source_file": "data.py",
       "source_location": "L295",
       "_origin": "ast",
-      "id": "data_rationale_295",
       "community": 2,
-      "norm_label": "build the training dataloader from an ase sqlite database."
+      "norm_label": "build the training dataloader from an ase sqlite database.",
+      "id": "data_rationale_295",
+      "community_name": "build_train_loader"
     },
     {
       "label": "Preprocess and cache all database frames for evaluation.",
@@ -254,9 +274,10 @@
       "source_file": "data.py",
       "source_location": "L353",
       "_origin": "ast",
-      "id": "data_rationale_353",
       "community": 2,
-      "norm_label": "preprocess and cache all database frames for evaluation."
+      "norm_label": "preprocess and cache all database frames for evaluation.",
+      "id": "data_rationale_353",
+      "community_name": "build_train_loader"
     },
     {
       "label": "explore_pdos.py",
@@ -264,9 +285,10 @@
       "source_file": "explore_pdos.py",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "explore_pdos",
       "community": 6,
-      "norm_label": "explore_pdos.py"
+      "norm_label": "explore_pdos.py",
+      "id": "explore_pdos",
+      "community_name": "extract_pdos.py"
     },
     {
       "label": "main()",
@@ -274,9 +296,10 @@
       "source_file": "explore_pdos.py",
       "source_location": "L16",
       "_origin": "ast",
-      "id": "explore_pdos_main",
       "community": 6,
-      "norm_label": "main()"
+      "norm_label": "main()",
+      "id": "explore_pdos_main",
+      "community_name": "extract_pdos.py"
     },
     {
       "label": "extract_pdos.py",
@@ -284,9 +307,10 @@
       "source_file": "extract_pdos.py",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "extract_pdos",
       "community": 6,
-      "norm_label": "extract_pdos.py"
+      "norm_label": "extract_pdos.py",
+      "id": "extract_pdos",
+      "community_name": "extract_pdos.py"
     },
     {
       "label": "parse_manual_castep()",
@@ -294,9 +318,10 @@
       "source_file": "extract_pdos.py",
       "source_location": "L20",
       "_origin": "ast",
-      "id": "extract_pdos_parse_manual_castep",
       "community": 6,
-      "norm_label": "parse_manual_castep()"
+      "norm_label": "parse_manual_castep()",
+      "id": "extract_pdos_parse_manual_castep",
+      "community_name": "extract_pdos.py"
     },
     {
       "label": "parse_manual_bands()",
@@ -304,9 +329,10 @@
       "source_file": "extract_pdos.py",
       "source_location": "L94",
       "_origin": "ast",
-      "id": "extract_pdos_parse_manual_bands",
       "community": 6,
-      "norm_label": "parse_manual_bands()"
+      "norm_label": "parse_manual_bands()",
+      "id": "extract_pdos_parse_manual_bands",
+      "community_name": "extract_pdos.py"
     },
     {
       "label": "transform_target()",
@@ -314,9 +340,10 @@
       "source_file": "extract_pdos.py",
       "source_location": "L122",
       "_origin": "ast",
-      "id": "extract_pdos_transform_target",
       "community": 6,
-      "norm_label": "transform_target()"
+      "norm_label": "transform_target()",
+      "id": "extract_pdos_transform_target",
+      "community_name": "extract_pdos.py"
     },
     {
       "label": "write_mace_dataset()",
@@ -324,9 +351,10 @@
       "source_file": "extract_pdos.py",
       "source_location": "L126",
       "_origin": "ast",
-      "id": "extract_pdos_write_mace_dataset",
       "community": 6,
-      "norm_label": "write_mace_dataset()"
+      "norm_label": "write_mace_dataset()",
+      "id": "extract_pdos_write_mace_dataset",
+      "community_name": "extract_pdos.py"
     },
     {
       "label": "create_orb_database()",
@@ -334,9 +362,10 @@
       "source_file": "extract_pdos.py",
       "source_location": "L156",
       "_origin": "ast",
-      "id": "extract_pdos_create_orb_database",
       "community": 6,
-      "norm_label": "create_orb_database()"
+      "norm_label": "create_orb_database()",
+      "id": "extract_pdos_create_orb_database",
+      "community_name": "extract_pdos.py"
     },
     {
       "label": "main()",
@@ -344,9 +373,10 @@
       "source_file": "extract_pdos.py",
       "source_location": "L187",
       "_origin": "ast",
-      "id": "extract_pdos_main",
       "community": 6,
-      "norm_label": "main()"
+      "norm_label": "main()",
+      "id": "extract_pdos_main",
+      "community_name": "extract_pdos.py"
     },
     {
       "label": "Writes a multi-frame dataset to Extended XYZ format.",
@@ -354,9 +384,10 @@
       "source_file": "extract_pdos.py",
       "source_location": "L127",
       "_origin": "ast",
-      "id": "extract_pdos_rationale_127",
       "community": 6,
-      "norm_label": "writes a multi-frame dataset to extended xyz format."
+      "norm_label": "writes a multi-frame dataset to extended xyz format.",
+      "id": "extract_pdos_rationale_127",
+      "community_name": "extract_pdos.py"
     },
     {
       "label": "Creates the ASE SQLite database.",
@@ -364,9 +395,10 @@
       "source_file": "extract_pdos.py",
       "source_location": "L157",
       "_origin": "ast",
-      "id": "extract_pdos_rationale_157",
       "community": 6,
-      "norm_label": "creates the ase sqlite database."
+      "norm_label": "creates the ase sqlite database.",
+      "id": "extract_pdos_rationale_157",
+      "community_name": "extract_pdos.py"
     },
     {
       "label": "losses.py",
@@ -374,9 +406,10 @@
       "source_file": "losses.py",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "losses",
       "community": 4,
-      "norm_label": "losses.py"
+      "norm_label": "losses.py",
+      "id": "losses",
+      "community_name": "losses.py"
     },
     {
       "label": "compute_r2()",
@@ -384,9 +417,10 @@
       "source_file": "losses.py",
       "source_location": "L5",
       "_origin": "ast",
-      "id": "losses_compute_r2",
       "community": 4,
-      "norm_label": "compute_r2()"
+      "norm_label": "compute_r2()",
+      "id": "losses_compute_r2",
+      "community_name": "losses.py"
     },
     {
       "label": "Tensor",
@@ -394,9 +428,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "losses_py_tensor",
       "community": 4,
-      "norm_label": "tensor"
+      "norm_label": "tensor",
+      "id": "losses_py_tensor",
+      "community_name": "losses.py"
     },
     {
       "label": "compute_force_loss()",
@@ -404,9 +439,10 @@
       "source_file": "losses.py",
       "source_location": "L18",
       "_origin": "ast",
-      "id": "losses_compute_force_loss",
       "community": 4,
-      "norm_label": "compute_force_loss()"
+      "norm_label": "compute_force_loss()",
+      "id": "losses_compute_force_loss",
+      "community_name": "losses.py"
     },
     {
       "label": "compute_energy_loss()",
@@ -414,9 +450,10 @@
       "source_file": "losses.py",
       "source_location": "L51",
       "_origin": "ast",
-      "id": "losses_compute_energy_loss",
       "community": 4,
-      "norm_label": "compute_energy_loss()"
+      "norm_label": "compute_energy_loss()",
+      "id": "losses_compute_energy_loss",
+      "community_name": "losses.py"
     },
     {
       "label": "compute_stress_loss()",
@@ -424,9 +461,10 @@
       "source_file": "losses.py",
       "source_location": "L72",
       "_origin": "ast",
-      "id": "losses_compute_stress_loss",
       "community": 4,
-      "norm_label": "compute_stress_loss()"
+      "norm_label": "compute_stress_loss()",
+      "id": "losses_compute_stress_loss",
+      "community_name": "losses.py"
     },
     {
       "label": "compute_eigenvalue_loss()",
@@ -434,9 +472,10 @@
       "source_file": "losses.py",
       "source_location": "L93",
       "_origin": "ast",
-      "id": "losses_compute_eigenvalue_loss",
       "community": 4,
-      "norm_label": "compute_eigenvalue_loss()"
+      "norm_label": "compute_eigenvalue_loss()",
+      "id": "losses_compute_eigenvalue_loss",
+      "community_name": "losses.py"
     },
     {
       "label": "compute_weight_loss()",
@@ -444,9 +483,10 @@
       "source_file": "losses.py",
       "source_location": "L116",
       "_origin": "ast",
-      "id": "losses_compute_weight_loss",
       "community": 4,
-      "norm_label": "compute_weight_loss()"
+      "norm_label": "compute_weight_loss()",
+      "id": "losses_compute_weight_loss",
+      "community_name": "losses.py"
     },
     {
       "label": "device",
@@ -454,9 +494,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "losses_py_device",
       "community": 4,
-      "norm_label": "device"
+      "norm_label": "device",
+      "id": "losses_py_device",
+      "community_name": "losses.py"
     },
     {
       "label": "compute_electronic_losses()",
@@ -464,9 +505,10 @@
       "source_file": "losses.py",
       "source_location": "L159",
       "_origin": "ast",
-      "id": "losses_compute_electronic_losses",
       "community": 4,
-      "norm_label": "compute_electronic_losses()"
+      "norm_label": "compute_electronic_losses()",
+      "id": "losses_compute_electronic_losses",
+      "community_name": "losses.py"
     },
     {
       "label": "Computes the R\u00b2 coefficient of determination (unbiased variance normalized).",
@@ -474,9 +516,10 @@
       "source_file": "losses.py",
       "source_location": "L6",
       "_origin": "ast",
-      "id": "losses_rationale_6",
       "community": 4,
-      "norm_label": "computes the r2 coefficient of determination (unbiased variance normalized)."
+      "norm_label": "computes the r2 coefficient of determination (unbiased variance normalized).",
+      "id": "losses_rationale_6",
+      "community_name": "losses.py"
     },
     {
       "label": "Computes standard MSE loss and diagnostics (MAE, RMSE, Max Error, R\u00b2) for forces",
@@ -484,9 +527,10 @@
       "source_file": "losses.py",
       "source_location": "L23",
       "_origin": "ast",
-      "id": "losses_rationale_23",
       "community": 4,
-      "norm_label": "computes standard mse loss and diagnostics (mae, rmse, max error, r2) for forces"
+      "norm_label": "computes standard mse loss and diagnostics (mae, rmse, max error, r2) for forces",
+      "id": "losses_rationale_23",
+      "community_name": "losses.py"
     },
     {
       "label": "Computes MSE loss and diagnostics (MAE, RMSE, R\u00b2) for energies.",
@@ -494,9 +538,10 @@
       "source_file": "losses.py",
       "source_location": "L55",
       "_origin": "ast",
-      "id": "losses_rationale_55",
       "community": 4,
-      "norm_label": "computes mse loss and diagnostics (mae, rmse, r2) for energies."
+      "norm_label": "computes mse loss and diagnostics (mae, rmse, r2) for energies.",
+      "id": "losses_rationale_55",
+      "community_name": "losses.py"
     },
     {
       "label": "Computes MSE loss and diagnostics (MAE, RMSE, R\u00b2) for stress.",
@@ -504,9 +549,10 @@
       "source_file": "losses.py",
       "source_location": "L76",
       "_origin": "ast",
-      "id": "losses_rationale_76",
       "community": 4,
-      "norm_label": "computes mse loss and diagnostics (mae, rmse, r2) for stress."
+      "norm_label": "computes mse loss and diagnostics (mae, rmse, r2) for stress.",
+      "id": "losses_rationale_76",
+      "community_name": "losses.py"
     },
     {
       "label": "Computes standard MSE loss and diagnostics (MAE, RMSE, R\u00b2) for eigenvalues.",
@@ -514,9 +560,10 @@
       "source_file": "losses.py",
       "source_location": "L97",
       "_origin": "ast",
-      "id": "losses_rationale_97",
       "community": 4,
-      "norm_label": "computes standard mse loss and diagnostics (mae, rmse, r2) for eigenvalues."
+      "norm_label": "computes standard mse loss and diagnostics (mae, rmse, r2) for eigenvalues.",
+      "id": "losses_rationale_97",
+      "community_name": "losses.py"
     },
     {
       "label": "Computes weight loss. Uses standard MSE loss for logit-transformed targets,",
@@ -524,9 +571,10 @@
       "source_file": "losses.py",
       "source_location": "L122",
       "_origin": "ast",
-      "id": "losses_rationale_122",
       "community": 4,
-      "norm_label": "computes weight loss. uses standard mse loss for logit-transformed targets,"
+      "norm_label": "computes weight loss. uses standard mse loss for logit-transformed targets,",
+      "id": "losses_rationale_122",
+      "community_name": "losses.py"
     },
     {
       "label": "Orchestrates standard MSE loss computation for eigenvalues and logit-space PDOS",
@@ -534,9 +582,10 @@
       "source_file": "losses.py",
       "source_location": "L167",
       "_origin": "ast",
-      "id": "losses_rationale_167",
       "community": 4,
-      "norm_label": "orchestrates standard mse loss computation for eigenvalues and logit-space pdos"
+      "norm_label": "orchestrates standard mse loss computation for eigenvalues and logit-space pdos",
+      "id": "losses_rationale_167",
+      "community_name": "losses.py"
     },
     {
       "label": "models.py",
@@ -544,9 +593,10 @@
       "source_file": "models.py",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "models",
       "community": 0,
-      "norm_label": "models.py"
+      "norm_label": "models.py",
+      "id": "models",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "ResidualBlock",
@@ -554,9 +604,10 @@
       "source_file": "models.py",
       "source_location": "L7",
       "_origin": "ast",
-      "id": "models_residualblock",
       "community": 3,
-      "norm_label": "residualblock"
+      "norm_label": "residualblock",
+      "id": "models_residualblock",
+      "community_name": "build_heads"
     },
     {
       "label": ".__init__()",
@@ -564,9 +615,10 @@
       "source_file": "models.py",
       "source_location": "L9",
       "_origin": "ast",
-      "id": "models_residualblock_init",
       "community": 3,
-      "norm_label": ".__init__()"
+      "norm_label": ".__init__()",
+      "id": "models_residualblock_init",
+      "community_name": "build_heads"
     },
     {
       "label": ".forward()",
@@ -574,9 +626,10 @@
       "source_file": "models.py",
       "source_location": "L18",
       "_origin": "ast",
-      "id": "models_residualblock_forward",
       "community": 3,
-      "norm_label": ".forward()"
+      "norm_label": ".forward()",
+      "id": "models_residualblock_forward",
+      "community_name": "build_heads"
     },
     {
       "label": "Tensor",
@@ -584,9 +637,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "models_py_tensor",
       "community": 3,
-      "norm_label": "tensor"
+      "norm_label": "tensor",
+      "id": "models_py_tensor",
+      "community_name": "build_heads"
     },
     {
       "label": "AttentionPool",
@@ -594,9 +648,10 @@
       "source_file": "models.py",
       "source_location": "L22",
       "_origin": "ast",
-      "id": "models_attentionpool",
       "community": 1,
-      "norm_label": "attentionpool"
+      "norm_label": "attentionpool",
+      "id": "models_attentionpool",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": ".__init__()",
@@ -604,9 +659,10 @@
       "source_file": "models.py",
       "source_location": "L28",
       "_origin": "ast",
-      "id": "models_attentionpool_init",
       "community": 3,
-      "norm_label": ".__init__()"
+      "norm_label": ".__init__()",
+      "id": "models_attentionpool_init",
+      "community_name": "build_heads"
     },
     {
       "label": ".forward()",
@@ -614,9 +670,10 @@
       "source_file": "models.py",
       "source_location": "L32",
       "_origin": "ast",
-      "id": "models_attentionpool_forward",
       "community": 3,
-      "norm_label": ".forward()"
+      "norm_label": ".forward()",
+      "id": "models_attentionpool_forward",
+      "community_name": "build_heads"
     },
     {
       "label": "ForceResidualHead",
@@ -624,9 +681,10 @@
       "source_file": "models.py",
       "source_location": "L49",
       "_origin": "ast",
-      "id": "models_forceresidualhead",
       "community": 1,
-      "norm_label": "forceresidualhead"
+      "norm_label": "forceresidualhead",
+      "id": "models_forceresidualhead",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": ".__init__()",
@@ -634,9 +692,10 @@
       "source_file": "models.py",
       "source_location": "L56",
       "_origin": "ast",
-      "id": "models_forceresidualhead_init",
       "community": 3,
-      "norm_label": ".__init__()"
+      "norm_label": ".__init__()",
+      "id": "models_forceresidualhead_init",
+      "community_name": "build_heads"
     },
     {
       "label": ".forward()",
@@ -644,9 +703,10 @@
       "source_file": "models.py",
       "source_location": "L70",
       "_origin": "ast",
-      "id": "models_forceresidualhead_forward",
       "community": 3,
-      "norm_label": ".forward()"
+      "norm_label": ".forward()",
+      "id": "models_forceresidualhead_forward",
+      "community_name": "build_heads"
     },
     {
       "label": "WeightHead",
@@ -654,9 +714,10 @@
       "source_file": "models.py",
       "source_location": "L75",
       "_origin": "ast",
-      "id": "models_weighthead",
       "community": 3,
-      "norm_label": "weighthead"
+      "norm_label": "weighthead",
+      "id": "models_weighthead",
+      "community_name": "build_heads"
     },
     {
       "label": ".__init__()",
@@ -664,9 +725,10 @@
       "source_file": "models.py",
       "source_location": "L82",
       "_origin": "ast",
-      "id": "models_weighthead_init",
       "community": 3,
-      "norm_label": ".__init__()"
+      "norm_label": ".__init__()",
+      "id": "models_weighthead_init",
+      "community_name": "build_heads"
     },
     {
       "label": ".forward()",
@@ -674,9 +736,10 @@
       "source_file": "models.py",
       "source_location": "L116",
       "_origin": "ast",
-      "id": "models_weighthead_forward",
       "community": 3,
-      "norm_label": ".forward()"
+      "norm_label": ".forward()",
+      "id": "models_weighthead_forward",
+      "community_name": "build_heads"
     },
     {
       "label": "build_heads()",
@@ -684,9 +747,10 @@
       "source_file": "models.py",
       "source_location": "L124",
       "_origin": "ast",
-      "id": "models_build_heads",
       "community": 3,
-      "norm_label": "build_heads()"
+      "norm_label": "build_heads()",
+      "id": "models_build_heads",
+      "community_name": "build_heads"
     },
     {
       "label": "device",
@@ -694,9 +758,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "models_py_device",
       "community": 3,
-      "norm_label": "device"
+      "norm_label": "device",
+      "id": "models_py_device",
+      "community_name": "build_heads"
     },
     {
       "label": "Module",
@@ -704,9 +769,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "models_py_module",
       "community": 3,
-      "norm_label": "module"
+      "norm_label": "module",
+      "id": "models_py_module",
+      "community_name": "build_heads"
     },
     {
       "label": "Simple linear-residual block with layer normalisation, SiLU activation, and drop",
@@ -714,9 +780,10 @@
       "source_file": "models.py",
       "source_location": "L8",
       "_origin": "ast",
-      "id": "models_rationale_8",
       "community": 3,
-      "norm_label": "simple linear-residual block with layer normalisation, silu activation, and drop"
+      "norm_label": "simple linear-residual block with layer normalisation, silu activation, and drop",
+      "id": "models_rationale_8",
+      "community_name": "build_heads"
     },
     {
       "label": "Softmax attention pooling to aggregate node representations into graph-level fea",
@@ -724,9 +791,10 @@
       "source_file": "models.py",
       "source_location": "L23",
       "_origin": "ast",
-      "id": "models_rationale_23",
       "community": 1,
-      "norm_label": "softmax attention pooling to aggregate node representations into graph-level fea"
+      "norm_label": "softmax attention pooling to aggregate node representations into graph-level fea",
+      "id": "models_rationale_23",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "Learns a domain-specific correction to pretrained force predictions.      Zero-i",
@@ -734,9 +802,10 @@
       "source_file": "models.py",
       "source_location": "L50",
       "_origin": "ast",
-      "id": "models_rationale_50",
       "community": 1,
-      "norm_label": "learns a domain-specific correction to pretrained force predictions.      zero-i"
+      "norm_label": "learns a domain-specific correction to pretrained force predictions.      zero-i",
+      "id": "models_rationale_50",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "Return per-atom force corrections [N_atoms, 3].",
@@ -744,9 +813,10 @@
       "source_file": "models.py",
       "source_location": "L71",
       "_origin": "ast",
-      "id": "models_rationale_71",
       "community": 3,
-      "norm_label": "return per-atom force corrections [n_atoms, 3]."
+      "norm_label": "return per-atom force corrections [n_atoms, 3].",
+      "id": "models_rationale_71",
+      "community_name": "build_heads"
     },
     {
       "label": "PDOS Weight Prediction Head with Group Normalisation.      Applies LayerNorm to",
@@ -754,9 +824,10 @@
       "source_file": "models.py",
       "source_location": "L76",
       "_origin": "ast",
-      "id": "models_rationale_76",
       "community": 3,
-      "norm_label": "pdos weight prediction head with group normalisation.      applies layernorm to"
+      "norm_label": "pdos weight prediction head with group normalisation.      applies layernorm to",
+      "id": "models_rationale_76",
+      "community_name": "build_heads"
     },
     {
       "label": "Helper to instantiate prediction heads and place them on device.      Returns ``",
@@ -764,9 +835,10 @@
       "source_file": "models.py",
       "source_location": "L131",
       "_origin": "ast",
-      "id": "models_rationale_131",
       "community": 3,
-      "norm_label": "helper to instantiate prediction heads and place them on device.      returns ``"
+      "norm_label": "helper to instantiate prediction heads and place them on device.      returns ``",
+      "id": "models_rationale_131",
+      "community_name": "build_heads"
     },
     {
       "label": "cellulose",
@@ -777,9 +849,10 @@
       "source_location": "L1",
       "version": "0.1.0",
       "_origin": "ast",
-      "id": "pkg_cellulose",
       "community": 11,
-      "norm_label": "cellulose"
+      "norm_label": "cellulose",
+      "id": "pkg_cellulose",
+      "community_name": "cellulose"
     },
     {
       "label": "run_finetune.py",
@@ -787,9 +860,10 @@
       "source_file": "run_finetune.py",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "run_finetune",
       "community": 8,
-      "norm_label": "run_finetune.py"
+      "norm_label": "run_finetune.py",
+      "id": "run_finetune",
+      "community_name": "run_finetune.py"
     },
     {
       "label": "get_system_ram_gb()",
@@ -797,9 +871,10 @@
       "source_file": "run_finetune.py",
       "source_location": "L22",
       "_origin": "ast",
-      "id": "run_finetune_get_system_ram_gb",
       "community": 8,
-      "norm_label": "get_system_ram_gb()"
+      "norm_label": "get_system_ram_gb()",
+      "id": "run_finetune_get_system_ram_gb",
+      "community_name": "run_finetune.py"
     },
     {
       "label": "get_gpu_vram_gb()",
@@ -807,9 +882,10 @@
       "source_file": "run_finetune.py",
       "source_location": "L35",
       "_origin": "ast",
-      "id": "run_finetune_get_gpu_vram_gb",
       "community": 8,
-      "norm_label": "get_gpu_vram_gb()"
+      "norm_label": "get_gpu_vram_gb()",
+      "id": "run_finetune_get_gpu_vram_gb",
+      "community_name": "run_finetune.py"
     },
     {
       "label": "main()",
@@ -817,9 +893,10 @@
       "source_file": "run_finetune.py",
       "source_location": "L47",
       "_origin": "ast",
-      "id": "run_finetune_main",
       "community": 8,
-      "norm_label": "main()"
+      "norm_label": "main()",
+      "id": "run_finetune_main",
+      "community_name": "run_finetune.py"
     },
     {
       "label": "Return total system RAM in GB by parsing /proc/meminfo on Linux.",
@@ -827,9 +904,10 @@
       "source_file": "run_finetune.py",
       "source_location": "L23",
       "_origin": "ast",
-      "id": "run_finetune_rationale_23",
       "community": 8,
-      "norm_label": "return total system ram in gb by parsing /proc/meminfo on linux."
+      "norm_label": "return total system ram in gb by parsing /proc/meminfo on linux.",
+      "id": "run_finetune_rationale_23",
+      "community_name": "run_finetune.py"
     },
     {
       "label": "Return GPU VRAM in GB for the specified device ID.",
@@ -837,9 +915,10 @@
       "source_file": "run_finetune.py",
       "source_location": "L36",
       "_origin": "ast",
-      "id": "run_finetune_rationale_36",
       "community": 8,
-      "norm_label": "return gpu vram in gb for the specified device id."
+      "norm_label": "return gpu vram in gb for the specified device id.",
+      "id": "run_finetune_rationale_36",
+      "community_name": "run_finetune.py"
     },
     {
       "label": "train.py",
@@ -847,9 +926,10 @@
       "source_file": "train.py",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "train_py_train",
       "community": 0,
-      "norm_label": "train.py"
+      "norm_label": "train.py",
+      "id": "train_py_train",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "FsyncFileHandler",
@@ -857,9 +937,10 @@
       "source_file": "train.py",
       "source_location": "L56",
       "_origin": "ast",
-      "id": "train_fsyncfilehandler",
       "community": 0,
-      "norm_label": "fsyncfilehandler"
+      "norm_label": "fsyncfilehandler",
+      "id": "train_fsyncfilehandler",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": ".emit()",
@@ -867,9 +948,10 @@
       "source_file": "train.py",
       "source_location": "L57",
       "_origin": "ast",
-      "id": "train_fsyncfilehandler_emit",
       "community": 0,
-      "norm_label": ".emit()"
+      "norm_label": ".emit()",
+      "id": "train_fsyncfilehandler_emit",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "setup_logging()",
@@ -877,9 +959,10 @@
       "source_file": "train.py",
       "source_location": "L66",
       "_origin": "ast",
-      "id": "train_setup_logging",
       "community": 0,
-      "norm_label": "setup_logging()"
+      "norm_label": "setup_logging()",
+      "id": "train_setup_logging",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "init_wandb_from_config()",
@@ -887,9 +970,10 @@
       "source_file": "train.py",
       "source_location": "L124",
       "_origin": "ast",
-      "id": "train_init_wandb_from_config",
       "community": 0,
-      "norm_label": "init_wandb_from_config()"
+      "norm_label": "init_wandb_from_config()",
+      "id": "train_init_wandb_from_config",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "Any",
@@ -897,9 +981,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "train_py_any",
       "community": 0,
-      "norm_label": "any"
+      "norm_label": "any",
+      "id": "train_py_any",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "_format_lr_summary()",
@@ -907,9 +992,10 @@
       "source_file": "train.py",
       "source_location": "L144",
       "_origin": "ast",
-      "id": "train_format_lr_summary",
       "community": 0,
-      "norm_label": "_format_lr_summary()"
+      "norm_label": "_format_lr_summary()",
+      "id": "train_format_lr_summary",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "Optimizer",
@@ -917,9 +1003,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "train_py_optimizer",
       "community": 0,
-      "norm_label": "optimizer"
+      "norm_label": "optimizer",
+      "id": "train_py_optimizer",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "run()",
@@ -927,9 +1014,10 @@
       "source_file": "train.py",
       "source_location": "L155",
       "_origin": "ast",
-      "id": "train_run",
       "community": 0,
-      "norm_label": "run()"
+      "norm_label": "run()",
+      "id": "train_run",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "Namespace",
@@ -937,9 +1025,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "train_py_namespace",
       "community": 0,
-      "norm_label": "namespace"
+      "norm_label": "namespace",
+      "id": "train_py_namespace",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "main()",
@@ -947,9 +1036,10 @@
       "source_file": "train.py",
       "source_location": "L615",
       "_origin": "ast",
-      "id": "train_main",
       "community": 0,
-      "norm_label": "main()"
+      "norm_label": "main()",
+      "id": "train_main",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "Configure logging to write to both console and a timestamped logfile.      Retur",
@@ -957,9 +1047,10 @@
       "source_file": "train.py",
       "source_location": "L67",
       "_origin": "ast",
-      "id": "train_rationale_67",
       "community": 0,
-      "norm_label": "configure logging to write to both console and a timestamped logfile.      retur"
+      "norm_label": "configure logging to write to both console and a timestamped logfile.      retur",
+      "id": "train_rationale_67",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "Return a compact LR string: single value if uniform, backbone/heads split otherw",
@@ -967,9 +1058,10 @@
       "source_file": "train.py",
       "source_location": "L145",
       "_origin": "ast",
-      "id": "train_rationale_145",
       "community": 0,
-      "norm_label": "return a compact lr string: single value if uniform, backbone/heads split otherw"
+      "norm_label": "return a compact lr string: single value if uniform, backbone/heads split otherw",
+      "id": "train_rationale_145",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "Top-level training orchestrator.",
@@ -977,9 +1069,10 @@
       "source_file": "train.py",
       "source_location": "L156",
       "_origin": "ast",
-      "id": "train_rationale_156",
       "community": 0,
-      "norm_label": "top-level training orchestrator."
+      "norm_label": "top-level training orchestrator.",
+      "id": "train_rationale_156",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "Parse command-line arguments and launch training.",
@@ -987,9 +1080,10 @@
       "source_file": "train.py",
       "source_location": "L616",
       "_origin": "ast",
-      "id": "train_rationale_616",
       "community": 0,
-      "norm_label": "parse command-line arguments and launch training."
+      "norm_label": "parse command-line arguments and launch training.",
+      "id": "train_rationale_616",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "train.sh",
@@ -1001,9 +1095,10 @@
         "kind": "file"
       },
       "_origin": "ast",
-      "id": "train_sh_train",
       "community": 5,
-      "norm_label": "train.sh"
+      "norm_label": "train.sh",
+      "id": "train_sh_train",
+      "community_name": "train.sh"
     },
     {
       "label": "train.sh script",
@@ -1015,9 +1110,10 @@
         "kind": "bash_entrypoint"
       },
       "_origin": "ast",
-      "id": "train_sh__entry",
       "community": 5,
-      "norm_label": "train.sh script"
+      "norm_label": "train.sh script",
+      "id": "train_sh__entry",
+      "community_name": "train.sh"
     },
     {
       "label": "OMP_NUM_THREADS",
@@ -1029,9 +1125,10 @@
         "kind": "code"
       },
       "_origin": "ast",
-      "id": "train_omp_num_threads",
       "community": 5,
-      "norm_label": "omp_num_threads"
+      "norm_label": "omp_num_threads",
+      "id": "train_omp_num_threads",
+      "community_name": "train.sh"
     },
     {
       "label": "MKL_NUM_THREADS",
@@ -1043,9 +1140,10 @@
         "kind": "code"
       },
       "_origin": "ast",
-      "id": "train_mkl_num_threads",
       "community": 5,
-      "norm_label": "mkl_num_threads"
+      "norm_label": "mkl_num_threads",
+      "id": "train_mkl_num_threads",
+      "community_name": "train.sh"
     },
     {
       "label": "OPENBLAS_NUM_THREADS",
@@ -1057,9 +1155,10 @@
         "kind": "code"
       },
       "_origin": "ast",
-      "id": "train_openblas_num_threads",
       "community": 5,
-      "norm_label": "openblas_num_threads"
+      "norm_label": "openblas_num_threads",
+      "id": "train_openblas_num_threads",
+      "community_name": "train.sh"
     },
     {
       "label": "VECLIB_MAXIMUM_THREADS",
@@ -1071,9 +1170,10 @@
         "kind": "code"
       },
       "_origin": "ast",
-      "id": "train_veclib_maximum_threads",
       "community": 5,
-      "norm_label": "veclib_maximum_threads"
+      "norm_label": "veclib_maximum_threads",
+      "id": "train_veclib_maximum_threads",
+      "community_name": "train.sh"
     },
     {
       "label": "NUMEXPR_NUM_THREADS",
@@ -1085,9 +1185,10 @@
         "kind": "code"
       },
       "_origin": "ast",
-      "id": "train_numexpr_num_threads",
       "community": 5,
-      "norm_label": "numexpr_num_threads"
+      "norm_label": "numexpr_num_threads",
+      "id": "train_numexpr_num_threads",
+      "community_name": "train.sh"
     },
     {
       "label": "KMP_AFFINITY",
@@ -1099,9 +1200,10 @@
         "kind": "code"
       },
       "_origin": "ast",
-      "id": "train_kmp_affinity",
       "community": 5,
-      "norm_label": "kmp_affinity"
+      "norm_label": "kmp_affinity",
+      "id": "train_kmp_affinity",
+      "community_name": "train.sh"
     },
     {
       "label": "WARP_CACHE_PATH",
@@ -1113,9 +1215,10 @@
         "kind": "code"
       },
       "_origin": "ast",
-      "id": "train_warp_cache_path",
       "community": 5,
-      "norm_label": "warp_cache_path"
+      "norm_label": "warp_cache_path",
+      "id": "train_warp_cache_path",
+      "community_name": "train.sh"
     },
     {
       "label": "CACHED_PATH_CACHE_ROOT",
@@ -1127,9 +1230,10 @@
         "kind": "code"
       },
       "_origin": "ast",
-      "id": "train_cached_path_cache_root",
       "community": 5,
-      "norm_label": "cached_path_cache_root"
+      "norm_label": "cached_path_cache_root",
+      "id": "train_cached_path_cache_root",
+      "community_name": "train.sh"
     },
     {
       "label": "HF_HOME",
@@ -1141,9 +1245,10 @@
         "kind": "code"
       },
       "_origin": "ast",
-      "id": "train_hf_home",
       "community": 5,
-      "norm_label": "hf_home"
+      "norm_label": "hf_home",
+      "id": "train_hf_home",
+      "community_name": "train.sh"
     },
     {
       "label": "TORCH_HOME",
@@ -1155,9 +1260,10 @@
         "kind": "code"
       },
       "_origin": "ast",
-      "id": "train_torch_home",
       "community": 5,
-      "norm_label": "torch_home"
+      "norm_label": "torch_home",
+      "id": "train_torch_home",
+      "community_name": "train.sh"
     },
     {
       "label": "MPLCONFIGDIR",
@@ -1169,9 +1275,10 @@
         "kind": "code"
       },
       "_origin": "ast",
-      "id": "train_mplconfigdir",
       "community": 5,
-      "norm_label": "mplconfigdir"
+      "norm_label": "mplconfigdir",
+      "id": "train_mplconfigdir",
+      "community_name": "train.sh"
     },
     {
       "label": "TORCHDYNAMO_DISABLE",
@@ -1183,9 +1290,10 @@
         "kind": "code"
       },
       "_origin": "ast",
-      "id": "train_torchdynamo_disable",
       "community": 5,
-      "norm_label": "torchdynamo_disable"
+      "norm_label": "torchdynamo_disable",
+      "id": "train_torchdynamo_disable",
+      "community_name": "train.sh"
     },
     {
       "label": "trainer.py",
@@ -1193,9 +1301,10 @@
       "source_file": "trainer.py",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "trainer",
       "community": 1,
-      "norm_label": "trainer.py"
+      "norm_label": "trainer.py",
+      "id": "trainer",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "UncertaintyLossWeighting",
@@ -1203,9 +1312,10 @@
       "source_file": "trainer.py",
       "source_location": "L30",
       "_origin": "ast",
-      "id": "trainer_uncertaintylossweighting",
       "community": 0,
-      "norm_label": "uncertaintylossweighting"
+      "norm_label": "uncertaintylossweighting",
+      "id": "trainer_uncertaintylossweighting",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": ".__init__()",
@@ -1213,9 +1323,10 @@
       "source_file": "trainer.py",
       "source_location": "L32",
       "_origin": "ast",
-      "id": "trainer_uncertaintylossweighting_init",
       "community": 0,
-      "norm_label": ".__init__()"
+      "norm_label": ".__init__()",
+      "id": "trainer_uncertaintylossweighting_init",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": ".forward()",
@@ -1223,9 +1334,10 @@
       "source_file": "trainer.py",
       "source_location": "L42",
       "_origin": "ast",
-      "id": "trainer_uncertaintylossweighting_forward",
       "community": 1,
-      "norm_label": ".forward()"
+      "norm_label": ".forward()",
+      "id": "trainer_uncertaintylossweighting_forward",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "Tensor",
@@ -1233,9 +1345,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "trainer_py_tensor",
       "community": 1,
-      "norm_label": "tensor"
+      "norm_label": "tensor",
+      "id": "trainer_py_tensor",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "build_loss_weights()",
@@ -1243,9 +1356,10 @@
       "source_file": "trainer.py",
       "source_location": "L56",
       "_origin": "ast",
-      "id": "trainer_build_loss_weights",
       "community": 1,
-      "norm_label": "build_loss_weights()"
+      "norm_label": "build_loss_weights()",
+      "id": "trainer_build_loss_weights",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "Namespace",
@@ -1253,9 +1367,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "trainer_py_namespace",
       "community": 1,
-      "norm_label": "namespace"
+      "norm_label": "namespace",
+      "id": "trainer_py_namespace",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "build_optimizer()",
@@ -1263,9 +1378,10 @@
       "source_file": "trainer.py",
       "source_location": "L94",
       "_origin": "ast",
-      "id": "trainer_build_optimizer",
       "community": 1,
-      "norm_label": "build_optimizer()"
+      "norm_label": "build_optimizer()",
+      "id": "trainer_build_optimizer",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "ModelMixin",
@@ -1273,9 +1389,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "modelmixin",
       "community": 1,
-      "norm_label": "modelmixin"
+      "norm_label": "modelmixin",
+      "id": "modelmixin",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "Module",
@@ -1283,9 +1400,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "trainer_py_module",
       "community": 1,
-      "norm_label": "module"
+      "norm_label": "module",
+      "id": "trainer_py_module",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "Optimizer",
@@ -1293,9 +1411,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "trainer_py_optimizer",
       "community": 1,
-      "norm_label": "optimizer"
+      "norm_label": "optimizer",
+      "id": "trainer_py_optimizer",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "build_scheduler()",
@@ -1303,9 +1422,10 @@
       "source_file": "trainer.py",
       "source_location": "L133",
       "_origin": "ast",
-      "id": "trainer_build_scheduler",
       "community": 1,
-      "norm_label": "build_scheduler()"
+      "norm_label": "build_scheduler()",
+      "id": "trainer_build_scheduler",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "_LRScheduler",
@@ -1313,9 +1433,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "lrscheduler",
       "community": 1,
-      "norm_label": "_lrscheduler"
+      "norm_label": "_lrscheduler",
+      "id": "lrscheduler",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "save_checkpoint()",
@@ -1323,9 +1444,10 @@
       "source_file": "trainer.py",
       "source_location": "L237",
       "_origin": "ast",
-      "id": "trainer_save_checkpoint",
       "community": 1,
-      "norm_label": "save_checkpoint()"
+      "norm_label": "save_checkpoint()",
+      "id": "trainer_save_checkpoint",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "Any",
@@ -1333,9 +1455,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "trainer_py_any",
       "community": 1,
-      "norm_label": "any"
+      "norm_label": "any",
+      "id": "trainer_py_any",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "resume_checkpoint()",
@@ -1343,9 +1466,10 @@
       "source_file": "trainer.py",
       "source_location": "L277",
       "_origin": "ast",
-      "id": "trainer_resume_checkpoint",
       "community": 1,
-      "norm_label": "resume_checkpoint()"
+      "norm_label": "resume_checkpoint()",
+      "id": "trainer_resume_checkpoint",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "device",
@@ -1353,9 +1477,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "trainer_py_device",
       "community": 1,
-      "norm_label": "device"
+      "norm_label": "device",
+      "id": "trainer_py_device",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "finetune()",
@@ -1363,9 +1488,10 @@
       "source_file": "trainer.py",
       "source_location": "L339",
       "_origin": "ast",
-      "id": "trainer_finetune",
       "community": 1,
-      "norm_label": "finetune()"
+      "norm_label": "finetune()",
+      "id": "trainer_finetune",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "evaluate_model()",
@@ -1373,9 +1499,10 @@
       "source_file": "trainer.py",
       "source_location": "L586",
       "_origin": "ast",
-      "id": "trainer_evaluate_model",
       "community": 1,
-      "norm_label": "evaluate_model()"
+      "norm_label": "evaluate_model()",
+      "id": "trainer_evaluate_model",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "AbstractAtomsAdapter",
@@ -1383,9 +1510,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "trainer_py_abstractatomsadapter",
       "community": 1,
-      "norm_label": "abstractatomsadapter"
+      "norm_label": "abstractatomsadapter",
+      "id": "trainer_py_abstractatomsadapter",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "_save_parity_plots()",
@@ -1393,9 +1521,10 @@
       "source_file": "trainer.py",
       "source_location": "L737",
       "_origin": "ast",
-      "id": "trainer_save_parity_plots",
       "community": 1,
-      "norm_label": "_save_parity_plots()"
+      "norm_label": "_save_parity_plots()",
+      "id": "trainer_save_parity_plots",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "ndarray",
@@ -1403,9 +1532,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "ndarray",
       "community": 1,
-      "norm_label": "ndarray"
+      "norm_label": "ndarray",
+      "id": "ndarray",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "Learnable homoscedastic uncertainty loss weighting (Kendall et al.).",
@@ -1413,9 +1543,10 @@
       "source_file": "trainer.py",
       "source_location": "L31",
       "_origin": "ast",
-      "id": "trainer_rationale_31",
       "community": 0,
-      "norm_label": "learnable homoscedastic uncertainty loss weighting (kendall et al.)."
+      "norm_label": "learnable homoscedastic uncertainty loss weighting (kendall et al.).",
+      "id": "trainer_rationale_31",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "Convert CLI loss-weight arguments into the dict expected by Orb models.",
@@ -1423,9 +1554,10 @@
       "source_file": "trainer.py",
       "source_location": "L57",
       "_origin": "ast",
-      "id": "trainer_rationale_57",
       "community": 1,
-      "norm_label": "convert cli loss-weight arguments into the dict expected by orb models."
+      "norm_label": "convert cli loss-weight arguments into the dict expected by orb models.",
+      "id": "trainer_rationale_57",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "Build the Adam optimizer with two parameter groups: backbone and heads.",
@@ -1433,9 +1565,10 @@
       "source_file": "trainer.py",
       "source_location": "L103",
       "_origin": "ast",
-      "id": "trainer_rationale_103",
       "community": 1,
-      "norm_label": "build the adam optimizer with two parameter groups: backbone and heads."
+      "norm_label": "build the adam optimizer with two parameter groups: backbone and heads.",
+      "id": "trainer_rationale_103",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "Build the learning-rate scheduler.      When ``args.warmup_epochs`` > 0, prepend",
@@ -1443,9 +1576,10 @@
       "source_file": "trainer.py",
       "source_location": "L139",
       "_origin": "ast",
-      "id": "trainer_rationale_139",
       "community": 1,
-      "norm_label": "build the learning-rate scheduler.      when ``args.warmup_epochs`` > 0, prepend"
+      "norm_label": "build the learning-rate scheduler.      when ``args.warmup_epochs`` > 0, prepend",
+      "id": "trainer_rationale_139",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "Save a training checkpoint to disk.",
@@ -1453,9 +1587,10 @@
       "source_file": "trainer.py",
       "source_location": "L255",
       "_origin": "ast",
-      "id": "trainer_rationale_255",
       "community": 1,
-      "norm_label": "save a training checkpoint to disk."
+      "norm_label": "save a training checkpoint to disk.",
+      "id": "trainer_rationale_255",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "Restore model, heads, attention pool, optimizer, and scheduler from a checkpoint",
@@ -1463,9 +1598,10 @@
       "source_file": "trainer.py",
       "source_location": "L290",
       "_origin": "ast",
-      "id": "trainer_rationale_290",
       "community": 1,
-      "norm_label": "restore model, heads, attention pool, optimizer, and scheduler from a checkpoint"
+      "norm_label": "restore model, heads, attention pool, optimizer, and scheduler from a checkpoint",
+      "id": "trainer_rationale_290",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "Run one epoch of electronic-structure finetuning.",
@@ -1473,9 +1609,10 @@
       "source_file": "trainer.py",
       "source_location": "L367",
       "_origin": "ast",
-      "id": "trainer_rationale_367",
       "community": 1,
-      "norm_label": "run one epoch of electronic-structure finetuning."
+      "norm_label": "run one epoch of electronic-structure finetuning.",
+      "id": "trainer_rationale_367",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "Evaluate current model checkpoint on cached validation frames.",
@@ -1483,9 +1620,10 @@
       "source_file": "trainer.py",
       "source_location": "L602",
       "_origin": "ast",
-      "id": "trainer_rationale_602",
       "community": 1,
-      "norm_label": "evaluate current model checkpoint on cached validation frames."
+      "norm_label": "evaluate current model checkpoint on cached validation frames.",
+      "id": "trainer_rationale_602",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "Save a 3-panel parity plot to disk.",
@@ -1493,9 +1631,10 @@
       "source_file": "trainer.py",
       "source_location": "L752",
       "_origin": "ast",
-      "id": "trainer_rationale_752",
       "community": 1,
-      "norm_label": "save a 3-panel parity plot to disk."
+      "norm_label": "save a 3-panel parity plot to disk.",
+      "id": "trainer_rationale_752",
+      "community_name": "Model Fine-tuning and Evaluation"
     },
     {
       "label": "utils.py",
@@ -1503,9 +1642,10 @@
       "source_file": "utils.py",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "utils",
       "community": 0,
-      "norm_label": "utils.py"
+      "norm_label": "utils.py",
+      "id": "utils",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "scatter_sum()",
@@ -1513,9 +1653,10 @@
       "source_file": "utils.py",
       "source_location": "L6",
       "_origin": "ast",
-      "id": "utils_scatter_sum",
       "community": 0,
-      "norm_label": "scatter_sum()"
+      "norm_label": "scatter_sum()",
+      "id": "utils_scatter_sum",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "Tensor",
@@ -1523,9 +1664,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "utils_py_tensor",
       "community": 0,
-      "norm_label": "tensor"
+      "norm_label": "tensor",
+      "id": "utils_py_tensor",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "scatter_mean()",
@@ -1533,9 +1675,10 @@
       "source_file": "utils.py",
       "source_location": "L17",
       "_origin": "ast",
-      "id": "utils_scatter_mean",
       "community": 0,
-      "norm_label": "scatter_mean()"
+      "norm_label": "scatter_mean()",
+      "id": "utils_scatter_mean",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "prefix_keys()",
@@ -1543,9 +1686,10 @@
       "source_file": "utils.py",
       "source_location": "L32",
       "_origin": "ast",
-      "id": "utils_prefix_keys",
       "community": 0,
-      "norm_label": "prefix_keys()"
+      "norm_label": "prefix_keys()",
+      "id": "utils_prefix_keys",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "Any",
@@ -1553,9 +1697,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "utils_py_any",
       "community": 0,
-      "norm_label": "any"
+      "norm_label": "any",
+      "id": "utils_py_any",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "build_graph_index()",
@@ -1563,9 +1708,10 @@
       "source_file": "utils.py",
       "source_location": "L37",
       "_origin": "ast",
-      "id": "utils_build_graph_index",
       "community": 0,
-      "norm_label": "build_graph_index()"
+      "norm_label": "build_graph_index()",
+      "id": "utils_build_graph_index",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "device",
@@ -1573,9 +1719,10 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "id": "utils_py_device",
       "community": 0,
-      "norm_label": "device"
+      "norm_label": "device",
+      "id": "utils_py_device",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "split_train_val()",
@@ -1583,9 +1730,10 @@
       "source_file": "utils.py",
       "source_location": "L47",
       "_origin": "ast",
-      "id": "utils_split_train_val",
       "community": 0,
-      "norm_label": "split_train_val()"
+      "norm_label": "split_train_val()",
+      "id": "utils_split_train_val",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "Computes the sum of all elements in the src tensor grouped by index.      Equiva",
@@ -1593,9 +1741,10 @@
       "source_file": "utils.py",
       "source_location": "L7",
       "_origin": "ast",
-      "id": "utils_rationale_7",
       "community": 0,
-      "norm_label": "computes the sum of all elements in the src tensor grouped by index.      equiva"
+      "norm_label": "computes the sum of all elements in the src tensor grouped by index.      equiva",
+      "id": "utils_rationale_7",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "Computes the mean values of all elements in the src tensor grouped by index.",
@@ -1603,9 +1752,10 @@
       "source_file": "utils.py",
       "source_location": "L18",
       "_origin": "ast",
-      "id": "utils_rationale_18",
       "community": 0,
-      "norm_label": "computes the mean values of all elements in the src tensor grouped by index."
+      "norm_label": "computes the mean values of all elements in the src tensor grouped by index.",
+      "id": "utils_rationale_18",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "Helper function to prefix dict keys with a string.",
@@ -1613,9 +1763,10 @@
       "source_file": "utils.py",
       "source_location": "L33",
       "_origin": "ast",
-      "id": "utils_rationale_33",
       "community": 0,
-      "norm_label": "helper function to prefix dict keys with a string."
+      "norm_label": "helper function to prefix dict keys with a string.",
+      "id": "utils_rationale_33",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "Builds a graph index tensor from node counts.      Example: [2, 3] -> [0, 0, 1,",
@@ -1623,9 +1774,10 @@
       "source_file": "utils.py",
       "source_location": "L38",
       "_origin": "ast",
-      "id": "utils_rationale_38",
       "community": 0,
-      "norm_label": "builds a graph index tensor from node counts.      example: [2, 3] -> [0, 0, 1,"
+      "norm_label": "builds a graph index tensor from node counts.      example: [2, 3] -> [0, 0, 1,",
+      "id": "utils_rationale_38",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "Generates a truly random train/val split of size val_fraction.",
@@ -1633,9 +1785,10 @@
       "source_file": "utils.py",
       "source_location": "L52",
       "_origin": "ast",
-      "id": "utils_rationale_52",
       "community": 0,
-      "norm_label": "generates a truly random train/val split of size val_fraction."
+      "norm_label": "generates a truly random train/val split of size val_fraction.",
+      "id": "utils_rationale_52",
+      "community_name": "Training Execution and Logging"
     },
     {
       "label": "Global Agent Directives",
@@ -1646,9 +1799,10 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "agents_agents",
       "community": 7,
-      "norm_label": "global agent directives"
+      "norm_label": "global agent directives",
+      "id": "agents_agents",
+      "community_name": "Global Agent Directives"
     },
     {
       "label": "Caveman Navigation Protocol",
@@ -1659,9 +1813,10 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "agents_rules_caveman_navigation",
       "community": 7,
-      "norm_label": "caveman navigation protocol"
+      "norm_label": "caveman navigation protocol",
+      "id": "agents_rules_caveman_navigation",
+      "community_name": "Global Agent Directives"
     },
     {
       "label": "Python & PyTorch Code Style Guide",
@@ -1672,9 +1827,10 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "agents_rules_code_style_guide",
       "community": 7,
-      "norm_label": "python & pytorch code style guide"
+      "norm_label": "python & pytorch code style guide",
+      "id": "agents_rules_code_style_guide",
+      "community_name": "Global Agent Directives"
     },
     {
       "label": "Caveman Communication Protocol",
@@ -1685,9 +1841,10 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "agents_skills_caveman_communication",
       "community": 7,
-      "norm_label": "caveman communication protocol"
+      "norm_label": "caveman communication protocol",
+      "id": "agents_skills_caveman_communication",
+      "community_name": "Global Agent Directives"
     },
     {
       "label": "Graphify Maintenance Skill",
@@ -1698,9 +1855,10 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "agents_skills_graphify_maintenance",
       "community": 7,
-      "norm_label": "graphify maintenance skill"
+      "norm_label": "graphify maintenance skill",
+      "id": "agents_skills_graphify_maintenance",
+      "community_name": "Global Agent Directives"
     },
     {
       "label": "Python & PyTorch Standards",
@@ -1711,9 +1869,10 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "agents_skills_python_pytorch_standards",
       "community": 7,
-      "norm_label": "python & pytorch standards"
+      "norm_label": "python & pytorch standards",
+      "id": "agents_skills_python_pytorch_standards",
+      "community_name": "Global Agent Directives"
     },
     {
       "label": "PyTorch CUDA Sanitizer",
@@ -1724,9 +1883,10 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "agents_skills_pytorch_cuda_sanitizer",
       "community": 7,
-      "norm_label": "pytorch cuda sanitizer"
+      "norm_label": "pytorch cuda sanitizer",
+      "id": "agents_skills_pytorch_cuda_sanitizer",
+      "community_name": "Global Agent Directives"
     },
     {
       "label": "Test-and-Tea Loop",
@@ -1737,9 +1897,10 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "agents_skills_test_and_tea_loop",
       "community": 7,
-      "norm_label": "test-and-tea loop"
+      "norm_label": "test-and-tea loop",
+      "id": "agents_skills_test_and_tea_loop",
+      "community_name": "Global Agent Directives"
     },
     {
       "label": "Pull Request Template",
@@ -1750,9 +1911,10 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "github_pull_request_template",
       "community": 9,
-      "norm_label": "pull request template"
+      "norm_label": "pull request template",
+      "id": "github_pull_request_template",
+      "community_name": "Contributing Guide"
     },
     {
       "label": "Bug Report Template",
@@ -1763,9 +1925,10 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "github_issue_template_bug_report",
       "community": 9,
-      "norm_label": "bug report template"
+      "norm_label": "bug report template",
+      "id": "github_issue_template_bug_report",
+      "community_name": "Contributing Guide"
     },
     {
       "label": "Feature Request Template",
@@ -1776,9 +1939,10 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "github_issue_template_feature_request",
       "community": 9,
-      "norm_label": "feature request template"
+      "norm_label": "feature request template",
+      "id": "github_issue_template_feature_request",
+      "community_name": "Contributing Guide"
     },
     {
       "label": "Code of Conduct",
@@ -1789,9 +1953,10 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "doc_code_of_conduct",
       "community": 9,
-      "norm_label": "code of conduct"
+      "norm_label": "code of conduct",
+      "id": "doc_code_of_conduct",
+      "community_name": "Contributing Guide"
     },
     {
       "label": "Contributing Guide",
@@ -1802,9 +1967,10 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "doc_contributing",
       "community": 9,
-      "norm_label": "contributing guide"
+      "norm_label": "contributing guide",
+      "id": "doc_contributing",
+      "community_name": "Contributing Guide"
     },
     {
       "label": "Security Policy",
@@ -1815,9 +1981,10 @@
       "captured_at": null,
       "author": null,
       "contributor": null,
-      "id": "doc_security",
       "community": 10,
-      "norm_label": "security policy"
+      "norm_label": "security policy",
+      "id": "doc_security",
+      "community_name": "Security Policy"
     }
   ],
   "links": [
@@ -1828,9 +1995,9 @@
       "source_location": "L278",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data",
-      "target": "data_build_train_loader",
-      "confidence_score": 1.0
+      "target": "data_build_train_loader"
     },
     {
       "relation": "contains",
@@ -1839,9 +2006,9 @@
       "source_location": "L349",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data",
-      "target": "data_cache_eval_frames",
-      "confidence_score": 1.0
+      "target": "data_cache_eval_frames"
     },
     {
       "relation": "contains",
@@ -1850,9 +2017,9 @@
       "source_location": "L20",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data",
-      "target": "data_extract_eigenvalues",
-      "confidence_score": 1.0
+      "target": "data_extract_eigenvalues"
     },
     {
       "relation": "contains",
@@ -1861,9 +2028,9 @@
       "source_location": "L25",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data",
-      "target": "data_extract_weights",
-      "confidence_score": 1.0
+      "target": "data_extract_weights"
     },
     {
       "relation": "contains",
@@ -1872,9 +2039,9 @@
       "source_location": "L45",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data",
-      "target": "data_load_custom_reference_energies",
-      "confidence_score": 1.0
+      "target": "data_load_custom_reference_energies"
     },
     {
       "relation": "contains",
@@ -1883,9 +2050,9 @@
       "source_location": "L98",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data",
-      "target": "data_localsubgraphsdataset",
-      "confidence_score": 1.0
+      "target": "data_localsubgraphsdataset"
     },
     {
       "relation": "imports",
@@ -1895,9 +2062,9 @@
       "source_location": "L40",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_py_train",
-      "target": "data",
-      "confidence_score": 1.0
+      "target": "data"
     },
     {
       "relation": "references",
@@ -1907,9 +2074,9 @@
       "source_location": "L20",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_extract_eigenvalues",
-      "target": "data_py_any",
-      "confidence_score": 1.0
+      "target": "data_py_any"
     },
     {
       "relation": "references",
@@ -1919,9 +2086,9 @@
       "source_location": "L20",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_extract_eigenvalues",
-      "target": "data_py_tensor",
-      "confidence_score": 1.0
+      "target": "data_py_tensor"
     },
     {
       "relation": "rationale_for",
@@ -1930,9 +2097,9 @@
       "source_location": "L21",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_rationale_21",
-      "target": "data_extract_eigenvalues",
-      "confidence_score": 1.0
+      "target": "data_extract_eigenvalues"
     },
     {
       "relation": "references",
@@ -1942,9 +2109,9 @@
       "source_location": "L278",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_build_train_loader",
-      "target": "data_py_any",
-      "confidence_score": 1.0
+      "target": "data_py_any"
     },
     {
       "relation": "references",
@@ -1954,9 +2121,9 @@
       "source_location": "L349",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_cache_eval_frames",
-      "target": "data_py_any",
-      "confidence_score": 1.0
+      "target": "data_py_any"
     },
     {
       "relation": "references",
@@ -1966,9 +2133,9 @@
       "source_location": "L25",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_extract_weights",
-      "target": "data_py_any",
-      "confidence_score": 1.0
+      "target": "data_py_any"
     },
     {
       "relation": "references",
@@ -1978,9 +2145,9 @@
       "source_location": "L134",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_localsubgraphsdataset_getitem",
-      "target": "data_py_any",
-      "confidence_score": 1.0
+      "target": "data_py_any"
     },
     {
       "relation": "references",
@@ -1990,9 +2157,9 @@
       "source_location": "L278",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_build_train_loader",
-      "target": "data_py_tensor",
-      "confidence_score": 1.0
+      "target": "data_py_tensor"
     },
     {
       "relation": "references",
@@ -2002,9 +2169,9 @@
       "source_location": "L25",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_extract_weights",
-      "target": "data_py_tensor",
-      "confidence_score": 1.0
+      "target": "data_py_tensor"
     },
     {
       "relation": "references",
@@ -2014,9 +2181,9 @@
       "source_location": "L45",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_load_custom_reference_energies",
-      "target": "data_py_tensor",
-      "confidence_score": 1.0
+      "target": "data_py_tensor"
     },
     {
       "relation": "references",
@@ -2026,9 +2193,9 @@
       "source_location": "L102",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_localsubgraphsdataset_init",
-      "target": "data_py_tensor",
-      "confidence_score": 1.0
+      "target": "data_py_tensor"
     },
     {
       "relation": "rationale_for",
@@ -2037,9 +2204,9 @@
       "source_location": "L26",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_rationale_26",
-      "target": "data_extract_weights",
-      "confidence_score": 1.0
+      "target": "data_extract_weights"
     },
     {
       "relation": "rationale_for",
@@ -2048,9 +2215,9 @@
       "source_location": "L46",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_rationale_46",
-      "target": "data_load_custom_reference_energies",
-      "confidence_score": 1.0
+      "target": "data_load_custom_reference_energies"
     },
     {
       "relation": "calls",
@@ -2072,9 +2239,9 @@
       "source_location": "L312",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_build_train_loader",
-      "target": "data_localsubgraphsdataset",
-      "confidence_score": 1.0
+      "target": "data_localsubgraphsdataset"
     },
     {
       "relation": "method",
@@ -2083,9 +2250,9 @@
       "source_location": "L134",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_localsubgraphsdataset",
-      "target": "data_localsubgraphsdataset_getitem",
-      "confidence_score": 1.0
+      "target": "data_localsubgraphsdataset_getitem"
     },
     {
       "relation": "method",
@@ -2094,9 +2261,9 @@
       "source_location": "L102",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_localsubgraphsdataset",
-      "target": "data_localsubgraphsdataset_init",
-      "confidence_score": 1.0
+      "target": "data_localsubgraphsdataset_init"
     },
     {
       "relation": "method",
@@ -2105,9 +2272,9 @@
       "source_location": "L131",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_localsubgraphsdataset",
-      "target": "data_localsubgraphsdataset_len",
-      "confidence_score": 1.0
+      "target": "data_localsubgraphsdataset_len"
     },
     {
       "relation": "rationale_for",
@@ -2116,9 +2283,9 @@
       "source_location": "L99",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_rationale_99",
-      "target": "data_localsubgraphsdataset",
-      "confidence_score": 1.0
+      "target": "data_localsubgraphsdataset"
     },
     {
       "relation": "calls",
@@ -2140,9 +2307,9 @@
       "source_location": "L102",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_localsubgraphsdataset_init",
-      "target": "asesqlitedataset",
-      "confidence_score": 1.0
+      "target": "asesqlitedataset"
     },
     {
       "relation": "calls",
@@ -2152,9 +2319,9 @@
       "source_location": "L302",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_build_train_loader",
-      "target": "asesqlitedataset",
-      "confidence_score": 1.0
+      "target": "asesqlitedataset"
     },
     {
       "relation": "references",
@@ -2164,9 +2331,9 @@
       "source_location": "L349",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_cache_eval_frames",
-      "target": "asesqlitedataset",
-      "confidence_score": 1.0
+      "target": "asesqlitedataset"
     },
     {
       "relation": "references",
@@ -2176,9 +2343,9 @@
       "source_location": "L278",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_build_train_loader",
-      "target": "data_py_abstractatomsadapter",
-      "confidence_score": 1.0
+      "target": "data_py_abstractatomsadapter"
     },
     {
       "relation": "references",
@@ -2188,9 +2355,9 @@
       "source_location": "L278",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_build_train_loader",
-      "target": "dataloader",
-      "confidence_score": 1.0
+      "target": "dataloader"
     },
     {
       "relation": "rationale_for",
@@ -2199,9 +2366,9 @@
       "source_location": "L295",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_rationale_295",
-      "target": "data_build_train_loader",
-      "confidence_score": 1.0
+      "target": "data_build_train_loader"
     },
     {
       "relation": "calls",
@@ -2222,9 +2389,9 @@
       "source_location": "L353",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "data_rationale_353",
-      "target": "data_cache_eval_frames",
-      "confidence_score": 1.0
+      "target": "data_cache_eval_frames"
     },
     {
       "relation": "calls",
@@ -2245,9 +2412,9 @@
       "source_location": "L16",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "explore_pdos",
-      "target": "explore_pdos_main",
-      "confidence_score": 1.0
+      "target": "explore_pdos_main"
     },
     {
       "relation": "imports_from",
@@ -2257,9 +2424,9 @@
       "source_location": "L14",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "explore_pdos",
-      "target": "extract_pdos",
-      "confidence_score": 1.0
+      "target": "extract_pdos"
     },
     {
       "relation": "imports",
@@ -2269,9 +2436,9 @@
       "source_location": "L14",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "explore_pdos",
-      "target": "extract_pdos_parse_manual_castep",
-      "confidence_score": 1.0
+      "target": "extract_pdos_parse_manual_castep"
     },
     {
       "relation": "calls",
@@ -2281,9 +2448,9 @@
       "source_location": "L31",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "explore_pdos_main",
-      "target": "extract_pdos_parse_manual_castep",
-      "confidence_score": 1.0
+      "target": "extract_pdos_parse_manual_castep"
     },
     {
       "relation": "contains",
@@ -2292,9 +2459,9 @@
       "source_location": "L156",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "extract_pdos",
-      "target": "extract_pdos_create_orb_database",
-      "confidence_score": 1.0
+      "target": "extract_pdos_create_orb_database"
     },
     {
       "relation": "contains",
@@ -2303,9 +2470,9 @@
       "source_location": "L187",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "extract_pdos",
-      "target": "extract_pdos_main",
-      "confidence_score": 1.0
+      "target": "extract_pdos_main"
     },
     {
       "relation": "contains",
@@ -2314,9 +2481,9 @@
       "source_location": "L94",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "extract_pdos",
-      "target": "extract_pdos_parse_manual_bands",
-      "confidence_score": 1.0
+      "target": "extract_pdos_parse_manual_bands"
     },
     {
       "relation": "contains",
@@ -2325,9 +2492,9 @@
       "source_location": "L20",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "extract_pdos",
-      "target": "extract_pdos_parse_manual_castep",
-      "confidence_score": 1.0
+      "target": "extract_pdos_parse_manual_castep"
     },
     {
       "relation": "contains",
@@ -2336,9 +2503,9 @@
       "source_location": "L122",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "extract_pdos",
-      "target": "extract_pdos_transform_target",
-      "confidence_score": 1.0
+      "target": "extract_pdos_transform_target"
     },
     {
       "relation": "contains",
@@ -2347,9 +2514,9 @@
       "source_location": "L126",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "extract_pdos",
-      "target": "extract_pdos_write_mace_dataset",
-      "confidence_score": 1.0
+      "target": "extract_pdos_write_mace_dataset"
     },
     {
       "relation": "calls",
@@ -2359,9 +2526,9 @@
       "source_location": "L213",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "extract_pdos_main",
-      "target": "extract_pdos_parse_manual_castep",
-      "confidence_score": 1.0
+      "target": "extract_pdos_parse_manual_castep"
     },
     {
       "relation": "calls",
@@ -2371,9 +2538,9 @@
       "source_location": "L216",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "extract_pdos_main",
-      "target": "extract_pdos_parse_manual_bands",
-      "confidence_score": 1.0
+      "target": "extract_pdos_parse_manual_bands"
     },
     {
       "relation": "calls",
@@ -2383,9 +2550,9 @@
       "source_location": "L245",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "extract_pdos_main",
-      "target": "extract_pdos_transform_target",
-      "confidence_score": 1.0
+      "target": "extract_pdos_transform_target"
     },
     {
       "relation": "calls",
@@ -2395,9 +2562,9 @@
       "source_location": "L258",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "extract_pdos_main",
-      "target": "extract_pdos_write_mace_dataset",
-      "confidence_score": 1.0
+      "target": "extract_pdos_write_mace_dataset"
     },
     {
       "relation": "rationale_for",
@@ -2406,9 +2573,9 @@
       "source_location": "L127",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "extract_pdos_rationale_127",
-      "target": "extract_pdos_write_mace_dataset",
-      "confidence_score": 1.0
+      "target": "extract_pdos_write_mace_dataset"
     },
     {
       "relation": "calls",
@@ -2418,9 +2585,9 @@
       "source_location": "L259",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "extract_pdos_main",
-      "target": "extract_pdos_create_orb_database",
-      "confidence_score": 1.0
+      "target": "extract_pdos_create_orb_database"
     },
     {
       "relation": "rationale_for",
@@ -2429,9 +2596,9 @@
       "source_location": "L157",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "extract_pdos_rationale_157",
-      "target": "extract_pdos_create_orb_database",
-      "confidence_score": 1.0
+      "target": "extract_pdos_create_orb_database"
     },
     {
       "relation": "contains",
@@ -2440,9 +2607,9 @@
       "source_location": "L93",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses",
-      "target": "losses_compute_eigenvalue_loss",
-      "confidence_score": 1.0
+      "target": "losses_compute_eigenvalue_loss"
     },
     {
       "relation": "contains",
@@ -2451,9 +2618,9 @@
       "source_location": "L159",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses",
-      "target": "losses_compute_electronic_losses",
-      "confidence_score": 1.0
+      "target": "losses_compute_electronic_losses"
     },
     {
       "relation": "contains",
@@ -2462,9 +2629,9 @@
       "source_location": "L51",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses",
-      "target": "losses_compute_energy_loss",
-      "confidence_score": 1.0
+      "target": "losses_compute_energy_loss"
     },
     {
       "relation": "contains",
@@ -2473,9 +2640,9 @@
       "source_location": "L18",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses",
-      "target": "losses_compute_force_loss",
-      "confidence_score": 1.0
+      "target": "losses_compute_force_loss"
     },
     {
       "relation": "contains",
@@ -2484,9 +2651,9 @@
       "source_location": "L5",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses",
-      "target": "losses_compute_r2",
-      "confidence_score": 1.0
+      "target": "losses_compute_r2"
     },
     {
       "relation": "contains",
@@ -2495,9 +2662,9 @@
       "source_location": "L72",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses",
-      "target": "losses_compute_stress_loss",
-      "confidence_score": 1.0
+      "target": "losses_compute_stress_loss"
     },
     {
       "relation": "contains",
@@ -2506,9 +2673,9 @@
       "source_location": "L116",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses",
-      "target": "losses_compute_weight_loss",
-      "confidence_score": 1.0
+      "target": "losses_compute_weight_loss"
     },
     {
       "relation": "imports_from",
@@ -2518,9 +2685,9 @@
       "source_location": "L26",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer",
-      "target": "losses",
-      "confidence_score": 1.0
+      "target": "losses"
     },
     {
       "relation": "calls",
@@ -2530,9 +2697,9 @@
       "source_location": "L104",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_compute_eigenvalue_loss",
-      "target": "losses_compute_r2",
-      "confidence_score": 1.0
+      "target": "losses_compute_r2"
     },
     {
       "relation": "calls",
@@ -2542,9 +2709,9 @@
       "source_location": "L61",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_compute_energy_loss",
-      "target": "losses_compute_r2",
-      "confidence_score": 1.0
+      "target": "losses_compute_r2"
     },
     {
       "relation": "calls",
@@ -2554,9 +2721,9 @@
       "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_compute_force_loss",
-      "target": "losses_compute_r2",
-      "confidence_score": 1.0
+      "target": "losses_compute_r2"
     },
     {
       "relation": "references",
@@ -2566,9 +2733,9 @@
       "source_location": "L5",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_compute_r2",
-      "target": "losses_py_tensor",
-      "confidence_score": 1.0
+      "target": "losses_py_tensor"
     },
     {
       "relation": "calls",
@@ -2578,9 +2745,9 @@
       "source_location": "L82",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_compute_stress_loss",
-      "target": "losses_compute_r2",
-      "confidence_score": 1.0
+      "target": "losses_compute_r2"
     },
     {
       "relation": "calls",
@@ -2590,9 +2757,9 @@
       "source_location": "L138",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_compute_weight_loss",
-      "target": "losses_compute_r2",
-      "confidence_score": 1.0
+      "target": "losses_compute_r2"
     },
     {
       "relation": "rationale_for",
@@ -2601,9 +2768,9 @@
       "source_location": "L6",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_rationale_6",
-      "target": "losses_compute_r2",
-      "confidence_score": 1.0
+      "target": "losses_compute_r2"
     },
     {
       "relation": "references",
@@ -2613,9 +2780,9 @@
       "source_location": "L93",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_compute_eigenvalue_loss",
-      "target": "losses_py_tensor",
-      "confidence_score": 1.0
+      "target": "losses_py_tensor"
     },
     {
       "relation": "references",
@@ -2625,9 +2792,9 @@
       "source_location": "L159",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_compute_electronic_losses",
-      "target": "losses_py_tensor",
-      "confidence_score": 1.0
+      "target": "losses_py_tensor"
     },
     {
       "relation": "references",
@@ -2637,9 +2804,9 @@
       "source_location": "L51",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_compute_energy_loss",
-      "target": "losses_py_tensor",
-      "confidence_score": 1.0
+      "target": "losses_py_tensor"
     },
     {
       "relation": "references",
@@ -2649,9 +2816,9 @@
       "source_location": "L18",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_compute_force_loss",
-      "target": "losses_py_tensor",
-      "confidence_score": 1.0
+      "target": "losses_py_tensor"
     },
     {
       "relation": "references",
@@ -2661,9 +2828,9 @@
       "source_location": "L72",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_compute_stress_loss",
-      "target": "losses_py_tensor",
-      "confidence_score": 1.0
+      "target": "losses_py_tensor"
     },
     {
       "relation": "references",
@@ -2673,9 +2840,9 @@
       "source_location": "L116",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_compute_weight_loss",
-      "target": "losses_py_tensor",
-      "confidence_score": 1.0
+      "target": "losses_py_tensor"
     },
     {
       "relation": "rationale_for",
@@ -2684,9 +2851,9 @@
       "source_location": "L23",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_rationale_23",
-      "target": "losses_compute_force_loss",
-      "confidence_score": 1.0
+      "target": "losses_compute_force_loss"
     },
     {
       "relation": "imports",
@@ -2696,9 +2863,9 @@
       "source_location": "L26",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer",
-      "target": "losses_compute_force_loss",
-      "confidence_score": 1.0
+      "target": "losses_compute_force_loss"
     },
     {
       "relation": "calls",
@@ -2708,9 +2875,9 @@
       "source_location": "L465",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_finetune",
-      "target": "losses_compute_force_loss",
-      "confidence_score": 1.0
+      "target": "losses_compute_force_loss"
     },
     {
       "relation": "rationale_for",
@@ -2719,9 +2886,9 @@
       "source_location": "L55",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_rationale_55",
-      "target": "losses_compute_energy_loss",
-      "confidence_score": 1.0
+      "target": "losses_compute_energy_loss"
     },
     {
       "relation": "imports",
@@ -2731,9 +2898,9 @@
       "source_location": "L26",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer",
-      "target": "losses_compute_energy_loss",
-      "confidence_score": 1.0
+      "target": "losses_compute_energy_loss"
     },
     {
       "relation": "calls",
@@ -2743,9 +2910,9 @@
       "source_location": "L473",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_finetune",
-      "target": "losses_compute_energy_loss",
-      "confidence_score": 1.0
+      "target": "losses_compute_energy_loss"
     },
     {
       "relation": "rationale_for",
@@ -2754,9 +2921,9 @@
       "source_location": "L76",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_rationale_76",
-      "target": "losses_compute_stress_loss",
-      "confidence_score": 1.0
+      "target": "losses_compute_stress_loss"
     },
     {
       "relation": "calls",
@@ -2766,9 +2933,9 @@
       "source_location": "L168",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_compute_electronic_losses",
-      "target": "losses_compute_eigenvalue_loss",
-      "confidence_score": 1.0
+      "target": "losses_compute_eigenvalue_loss"
     },
     {
       "relation": "rationale_for",
@@ -2777,9 +2944,9 @@
       "source_location": "L97",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_rationale_97",
-      "target": "losses_compute_eigenvalue_loss",
-      "confidence_score": 1.0
+      "target": "losses_compute_eigenvalue_loss"
     },
     {
       "relation": "calls",
@@ -2789,9 +2956,9 @@
       "source_location": "L172",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_compute_electronic_losses",
-      "target": "losses_compute_weight_loss",
-      "confidence_score": 1.0
+      "target": "losses_compute_weight_loss"
     },
     {
       "relation": "references",
@@ -2801,9 +2968,9 @@
       "source_location": "L116",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_compute_weight_loss",
-      "target": "losses_py_device",
-      "confidence_score": 1.0
+      "target": "losses_py_device"
     },
     {
       "relation": "rationale_for",
@@ -2812,9 +2979,9 @@
       "source_location": "L122",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_rationale_122",
-      "target": "losses_compute_weight_loss",
-      "confidence_score": 1.0
+      "target": "losses_compute_weight_loss"
     },
     {
       "relation": "references",
@@ -2824,9 +2991,9 @@
       "source_location": "L159",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_compute_electronic_losses",
-      "target": "losses_py_device",
-      "confidence_score": 1.0
+      "target": "losses_py_device"
     },
     {
       "relation": "rationale_for",
@@ -2835,9 +3002,9 @@
       "source_location": "L167",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "losses_rationale_167",
-      "target": "losses_compute_electronic_losses",
-      "confidence_score": 1.0
+      "target": "losses_compute_electronic_losses"
     },
     {
       "relation": "imports",
@@ -2847,9 +3014,9 @@
       "source_location": "L26",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer",
-      "target": "losses_compute_electronic_losses",
-      "confidence_score": 1.0
+      "target": "losses_compute_electronic_losses"
     },
     {
       "relation": "calls",
@@ -2859,9 +3026,9 @@
       "source_location": "L439",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_finetune",
-      "target": "losses_compute_electronic_losses",
-      "confidence_score": 1.0
+      "target": "losses_compute_electronic_losses"
     },
     {
       "relation": "contains",
@@ -2870,9 +3037,9 @@
       "source_location": "L22",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models",
-      "target": "models_attentionpool",
-      "confidence_score": 1.0
+      "target": "models_attentionpool"
     },
     {
       "relation": "contains",
@@ -2881,9 +3048,9 @@
       "source_location": "L124",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models",
-      "target": "models_build_heads",
-      "confidence_score": 1.0
+      "target": "models_build_heads"
     },
     {
       "relation": "contains",
@@ -2892,9 +3059,9 @@
       "source_location": "L49",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models",
-      "target": "models_forceresidualhead",
-      "confidence_score": 1.0
+      "target": "models_forceresidualhead"
     },
     {
       "relation": "contains",
@@ -2903,9 +3070,9 @@
       "source_location": "L7",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models",
-      "target": "models_residualblock",
-      "confidence_score": 1.0
+      "target": "models_residualblock"
     },
     {
       "relation": "contains",
@@ -2914,9 +3081,9 @@
       "source_location": "L75",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models",
-      "target": "models_weighthead",
-      "confidence_score": 1.0
+      "target": "models_weighthead"
     },
     {
       "relation": "imports_from",
@@ -2926,9 +3093,9 @@
       "source_location": "L3",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models",
-      "target": "utils",
-      "confidence_score": 1.0
+      "target": "utils"
     },
     {
       "relation": "imports",
@@ -2938,9 +3105,9 @@
       "source_location": "L3",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models",
-      "target": "utils_scatter_mean",
-      "confidence_score": 1.0
+      "target": "utils_scatter_mean"
     },
     {
       "relation": "imports",
@@ -2950,9 +3117,9 @@
       "source_location": "L3",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models",
-      "target": "utils_scatter_sum",
-      "confidence_score": 1.0
+      "target": "utils_scatter_sum"
     },
     {
       "relation": "imports_from",
@@ -2962,9 +3129,9 @@
       "source_location": "L42",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_py_train",
-      "target": "models",
-      "confidence_score": 1.0
+      "target": "models"
     },
     {
       "relation": "imports_from",
@@ -2974,9 +3141,9 @@
       "source_location": "L27",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer",
-      "target": "models",
-      "confidence_score": 1.0
+      "target": "models"
     },
     {
       "relation": "calls",
@@ -2986,9 +3153,9 @@
       "source_location": "L143",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_build_heads",
-      "target": "models_residualblock",
-      "confidence_score": 1.0
+      "target": "models_residualblock"
     },
     {
       "relation": "calls",
@@ -2998,9 +3165,9 @@
       "source_location": "L63",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_forceresidualhead_init",
-      "target": "models_residualblock",
-      "confidence_score": 1.0
+      "target": "models_residualblock"
     },
     {
       "relation": "rationale_for",
@@ -3009,9 +3176,9 @@
       "source_location": "L8",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_rationale_8",
-      "target": "models_residualblock",
-      "confidence_score": 1.0
+      "target": "models_residualblock"
     },
     {
       "relation": "method",
@@ -3020,9 +3187,9 @@
       "source_location": "L18",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_residualblock",
-      "target": "models_residualblock_forward",
-      "confidence_score": 1.0
+      "target": "models_residualblock_forward"
     },
     {
       "relation": "method",
@@ -3031,9 +3198,9 @@
       "source_location": "L9",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_residualblock",
-      "target": "models_residualblock_init",
-      "confidence_score": 1.0
+      "target": "models_residualblock_init"
     },
     {
       "relation": "calls",
@@ -3043,9 +3210,9 @@
       "source_location": "L104",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_weighthead_init",
-      "target": "models_residualblock",
-      "confidence_score": 1.0
+      "target": "models_residualblock"
     },
     {
       "relation": "calls",
@@ -3055,9 +3222,9 @@
       "source_location": "L10",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_residualblock_init",
-      "target": "models_weighthead_init",
-      "confidence_score": 1.0
+      "target": "models_weighthead_init"
     },
     {
       "relation": "references",
@@ -3067,9 +3234,9 @@
       "source_location": "L18",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_residualblock_forward",
-      "target": "models_py_tensor",
-      "confidence_score": 1.0
+      "target": "models_py_tensor"
     },
     {
       "relation": "references",
@@ -3079,9 +3246,9 @@
       "source_location": "L32",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_attentionpool_forward",
-      "target": "models_py_tensor",
-      "confidence_score": 1.0
+      "target": "models_py_tensor"
     },
     {
       "relation": "references",
@@ -3091,9 +3258,9 @@
       "source_location": "L70",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_forceresidualhead_forward",
-      "target": "models_py_tensor",
-      "confidence_score": 1.0
+      "target": "models_py_tensor"
     },
     {
       "relation": "references",
@@ -3103,9 +3270,9 @@
       "source_location": "L116",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_weighthead_forward",
-      "target": "models_py_tensor",
-      "confidence_score": 1.0
+      "target": "models_py_tensor"
     },
     {
       "relation": "method",
@@ -3114,9 +3281,9 @@
       "source_location": "L32",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_attentionpool",
-      "target": "models_attentionpool_forward",
-      "confidence_score": 1.0
+      "target": "models_attentionpool_forward"
     },
     {
       "relation": "method",
@@ -3125,9 +3292,9 @@
       "source_location": "L28",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_attentionpool",
-      "target": "models_attentionpool_init",
-      "confidence_score": 1.0
+      "target": "models_attentionpool_init"
     },
     {
       "relation": "references",
@@ -3137,9 +3304,9 @@
       "source_location": "L124",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_build_heads",
-      "target": "models_attentionpool",
-      "confidence_score": 1.0
+      "target": "models_attentionpool"
     },
     {
       "relation": "rationale_for",
@@ -3148,9 +3315,9 @@
       "source_location": "L23",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_rationale_23",
-      "target": "models_attentionpool",
-      "confidence_score": 1.0
+      "target": "models_attentionpool"
     },
     {
       "relation": "imports",
@@ -3160,9 +3327,9 @@
       "source_location": "L27",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer",
-      "target": "models_attentionpool",
-      "confidence_score": 1.0
+      "target": "models_attentionpool"
     },
     {
       "relation": "references",
@@ -3172,9 +3339,9 @@
       "source_location": "L94",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_build_optimizer",
-      "target": "models_attentionpool",
-      "confidence_score": 1.0
+      "target": "models_attentionpool"
     },
     {
       "relation": "references",
@@ -3184,9 +3351,9 @@
       "source_location": "L586",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_evaluate_model",
-      "target": "models_attentionpool",
-      "confidence_score": 1.0
+      "target": "models_attentionpool"
     },
     {
       "relation": "references",
@@ -3196,9 +3363,9 @@
       "source_location": "L339",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_finetune",
-      "target": "models_attentionpool",
-      "confidence_score": 1.0
+      "target": "models_attentionpool"
     },
     {
       "relation": "references",
@@ -3208,9 +3375,9 @@
       "source_location": "L277",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_resume_checkpoint",
-      "target": "models_attentionpool",
-      "confidence_score": 1.0
+      "target": "models_attentionpool"
     },
     {
       "relation": "references",
@@ -3220,9 +3387,9 @@
       "source_location": "L237",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_save_checkpoint",
-      "target": "models_attentionpool",
-      "confidence_score": 1.0
+      "target": "models_attentionpool"
     },
     {
       "relation": "uses",
@@ -3231,9 +3398,9 @@
       "source_location": "L27",
       "weight": 0.8,
       "_origin": "ast",
+      "confidence_score": 0.5,
       "source": "trainer_uncertaintylossweighting",
-      "target": "models_attentionpool",
-      "confidence_score": 0.5
+      "target": "models_attentionpool"
     },
     {
       "relation": "calls",
@@ -3243,9 +3410,9 @@
       "source_location": "L29",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_attentionpool_init",
-      "target": "models_weighthead_init",
-      "confidence_score": 1.0
+      "target": "models_weighthead_init"
     },
     {
       "relation": "calls",
@@ -3267,9 +3434,9 @@
       "source_location": "L124",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_build_heads",
-      "target": "models_forceresidualhead",
-      "confidence_score": 1.0
+      "target": "models_forceresidualhead"
     },
     {
       "relation": "method",
@@ -3278,9 +3445,9 @@
       "source_location": "L70",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_forceresidualhead",
-      "target": "models_forceresidualhead_forward",
-      "confidence_score": 1.0
+      "target": "models_forceresidualhead_forward"
     },
     {
       "relation": "method",
@@ -3289,9 +3456,9 @@
       "source_location": "L56",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_forceresidualhead",
-      "target": "models_forceresidualhead_init",
-      "confidence_score": 1.0
+      "target": "models_forceresidualhead_init"
     },
     {
       "relation": "rationale_for",
@@ -3300,9 +3467,9 @@
       "source_location": "L50",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_rationale_50",
-      "target": "models_forceresidualhead",
-      "confidence_score": 1.0
+      "target": "models_forceresidualhead"
     },
     {
       "relation": "imports",
@@ -3312,9 +3479,9 @@
       "source_location": "L27",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer",
-      "target": "models_forceresidualhead",
-      "confidence_score": 1.0
+      "target": "models_forceresidualhead"
     },
     {
       "relation": "references",
@@ -3324,9 +3491,9 @@
       "source_location": "L94",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_build_optimizer",
-      "target": "models_forceresidualhead",
-      "confidence_score": 1.0
+      "target": "models_forceresidualhead"
     },
     {
       "relation": "references",
@@ -3336,9 +3503,9 @@
       "source_location": "L586",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_evaluate_model",
-      "target": "models_forceresidualhead",
-      "confidence_score": 1.0
+      "target": "models_forceresidualhead"
     },
     {
       "relation": "references",
@@ -3348,9 +3515,9 @@
       "source_location": "L339",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_finetune",
-      "target": "models_forceresidualhead",
-      "confidence_score": 1.0
+      "target": "models_forceresidualhead"
     },
     {
       "relation": "references",
@@ -3360,9 +3527,9 @@
       "source_location": "L277",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_resume_checkpoint",
-      "target": "models_forceresidualhead",
-      "confidence_score": 1.0
+      "target": "models_forceresidualhead"
     },
     {
       "relation": "references",
@@ -3372,9 +3539,9 @@
       "source_location": "L237",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_save_checkpoint",
-      "target": "models_forceresidualhead",
-      "confidence_score": 1.0
+      "target": "models_forceresidualhead"
     },
     {
       "relation": "uses",
@@ -3383,9 +3550,9 @@
       "source_location": "L27",
       "weight": 0.8,
       "_origin": "ast",
+      "confidence_score": 0.5,
       "source": "trainer_uncertaintylossweighting",
-      "target": "models_forceresidualhead",
-      "confidence_score": 0.5
+      "target": "models_forceresidualhead"
     },
     {
       "relation": "calls",
@@ -3395,9 +3562,9 @@
       "source_location": "L57",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_forceresidualhead_init",
-      "target": "models_weighthead_init",
-      "confidence_score": 1.0
+      "target": "models_weighthead_init"
     },
     {
       "relation": "rationale_for",
@@ -3406,9 +3573,9 @@
       "source_location": "L71",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_rationale_71",
-      "target": "models_forceresidualhead_forward",
-      "confidence_score": 1.0
+      "target": "models_forceresidualhead_forward"
     },
     {
       "relation": "references",
@@ -3418,9 +3585,9 @@
       "source_location": "L124",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_build_heads",
-      "target": "models_weighthead",
-      "confidence_score": 1.0
+      "target": "models_weighthead"
     },
     {
       "relation": "rationale_for",
@@ -3429,9 +3596,9 @@
       "source_location": "L76",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_rationale_76",
-      "target": "models_weighthead",
-      "confidence_score": 1.0
+      "target": "models_weighthead"
     },
     {
       "relation": "method",
@@ -3440,9 +3607,9 @@
       "source_location": "L116",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_weighthead",
-      "target": "models_weighthead_forward",
-      "confidence_score": 1.0
+      "target": "models_weighthead_forward"
     },
     {
       "relation": "method",
@@ -3451,9 +3618,9 @@
       "source_location": "L82",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_weighthead",
-      "target": "models_weighthead_init",
-      "confidence_score": 1.0
+      "target": "models_weighthead_init"
     },
     {
       "relation": "imports",
@@ -3463,9 +3630,9 @@
       "source_location": "L27",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer",
-      "target": "models_weighthead",
-      "confidence_score": 1.0
+      "target": "models_weighthead"
     },
     {
       "relation": "uses",
@@ -3474,9 +3641,9 @@
       "source_location": "L27",
       "weight": 0.8,
       "_origin": "ast",
+      "confidence_score": 0.5,
       "source": "trainer_uncertaintylossweighting",
-      "target": "models_weighthead",
-      "confidence_score": 0.5
+      "target": "models_weighthead"
     },
     {
       "relation": "references",
@@ -3486,9 +3653,9 @@
       "source_location": "L124",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_build_heads",
-      "target": "models_py_device",
-      "confidence_score": 1.0
+      "target": "models_py_device"
     },
     {
       "relation": "references",
@@ -3498,9 +3665,9 @@
       "source_location": "L124",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_build_heads",
-      "target": "models_py_module",
-      "confidence_score": 1.0
+      "target": "models_py_module"
     },
     {
       "relation": "rationale_for",
@@ -3509,9 +3676,9 @@
       "source_location": "L131",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "models_rationale_131",
-      "target": "models_build_heads",
-      "confidence_score": 1.0
+      "target": "models_build_heads"
     },
     {
       "relation": "imports",
@@ -3521,9 +3688,9 @@
       "source_location": "L42",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_py_train",
-      "target": "models_build_heads",
-      "confidence_score": 1.0
+      "target": "models_build_heads"
     },
     {
       "relation": "calls",
@@ -3533,9 +3700,9 @@
       "source_location": "L210",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_run",
-      "target": "models_build_heads",
-      "confidence_score": 1.0
+      "target": "models_build_heads"
     },
     {
       "relation": "contains",
@@ -3544,9 +3711,9 @@
       "source_location": "L35",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "run_finetune",
-      "target": "run_finetune_get_gpu_vram_gb",
-      "confidence_score": 1.0
+      "target": "run_finetune_get_gpu_vram_gb"
     },
     {
       "relation": "contains",
@@ -3555,9 +3722,9 @@
       "source_location": "L22",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "run_finetune",
-      "target": "run_finetune_get_system_ram_gb",
-      "confidence_score": 1.0
+      "target": "run_finetune_get_system_ram_gb"
     },
     {
       "relation": "contains",
@@ -3566,9 +3733,9 @@
       "source_location": "L47",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "run_finetune",
-      "target": "run_finetune_main",
-      "confidence_score": 1.0
+      "target": "run_finetune_main"
     },
     {
       "relation": "calls",
@@ -3578,9 +3745,9 @@
       "source_location": "L59",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "run_finetune_main",
-      "target": "run_finetune_get_system_ram_gb",
-      "confidence_score": 1.0
+      "target": "run_finetune_get_system_ram_gb"
     },
     {
       "relation": "rationale_for",
@@ -3589,9 +3756,9 @@
       "source_location": "L23",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "run_finetune_rationale_23",
-      "target": "run_finetune_get_system_ram_gb",
-      "confidence_score": 1.0
+      "target": "run_finetune_get_system_ram_gb"
     },
     {
       "relation": "calls",
@@ -3601,9 +3768,9 @@
       "source_location": "L61",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "run_finetune_main",
-      "target": "run_finetune_get_gpu_vram_gb",
-      "confidence_score": 1.0
+      "target": "run_finetune_get_gpu_vram_gb"
     },
     {
       "relation": "rationale_for",
@@ -3612,9 +3779,9 @@
       "source_location": "L36",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "run_finetune_rationale_36",
-      "target": "run_finetune_get_gpu_vram_gb",
-      "confidence_score": 1.0
+      "target": "run_finetune_get_gpu_vram_gb"
     },
     {
       "relation": "contains",
@@ -3623,9 +3790,9 @@
       "source_location": "L144",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_py_train",
-      "target": "train_format_lr_summary",
-      "confidence_score": 1.0
+      "target": "train_format_lr_summary"
     },
     {
       "relation": "contains",
@@ -3634,9 +3801,9 @@
       "source_location": "L56",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_py_train",
-      "target": "train_fsyncfilehandler",
-      "confidence_score": 1.0
+      "target": "train_fsyncfilehandler"
     },
     {
       "relation": "contains",
@@ -3645,9 +3812,9 @@
       "source_location": "L124",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_py_train",
-      "target": "train_init_wandb_from_config",
-      "confidence_score": 1.0
+      "target": "train_init_wandb_from_config"
     },
     {
       "relation": "contains",
@@ -3656,9 +3823,9 @@
       "source_location": "L615",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_py_train",
-      "target": "train_main",
-      "confidence_score": 1.0
+      "target": "train_main"
     },
     {
       "relation": "contains",
@@ -3667,9 +3834,9 @@
       "source_location": "L155",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_py_train",
-      "target": "train_run",
-      "confidence_score": 1.0
+      "target": "train_run"
     },
     {
       "relation": "contains",
@@ -3678,9 +3845,9 @@
       "source_location": "L66",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_py_train",
-      "target": "train_setup_logging",
-      "confidence_score": 1.0
+      "target": "train_setup_logging"
     },
     {
       "relation": "imports_from",
@@ -3690,9 +3857,9 @@
       "source_location": "L43",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_py_train",
-      "target": "trainer",
-      "confidence_score": 1.0
+      "target": "trainer"
     },
     {
       "relation": "imports",
@@ -3702,9 +3869,9 @@
       "source_location": "L43",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_py_train",
-      "target": "trainer_build_loss_weights",
-      "confidence_score": 1.0
+      "target": "trainer_build_loss_weights"
     },
     {
       "relation": "imports",
@@ -3714,9 +3881,9 @@
       "source_location": "L43",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_py_train",
-      "target": "trainer_build_optimizer",
-      "confidence_score": 1.0
+      "target": "trainer_build_optimizer"
     },
     {
       "relation": "imports",
@@ -3726,9 +3893,9 @@
       "source_location": "L43",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_py_train",
-      "target": "trainer_build_scheduler",
-      "confidence_score": 1.0
+      "target": "trainer_build_scheduler"
     },
     {
       "relation": "imports",
@@ -3738,9 +3905,9 @@
       "source_location": "L43",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_py_train",
-      "target": "trainer_evaluate_model",
-      "confidence_score": 1.0
+      "target": "trainer_evaluate_model"
     },
     {
       "relation": "imports",
@@ -3750,9 +3917,9 @@
       "source_location": "L43",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_py_train",
-      "target": "trainer_finetune",
-      "confidence_score": 1.0
+      "target": "trainer_finetune"
     },
     {
       "relation": "imports",
@@ -3762,9 +3929,9 @@
       "source_location": "L43",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_py_train",
-      "target": "trainer_resume_checkpoint",
-      "confidence_score": 1.0
+      "target": "trainer_resume_checkpoint"
     },
     {
       "relation": "imports",
@@ -3774,9 +3941,9 @@
       "source_location": "L43",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_py_train",
-      "target": "trainer_save_checkpoint",
-      "confidence_score": 1.0
+      "target": "trainer_save_checkpoint"
     },
     {
       "relation": "imports",
@@ -3786,9 +3953,9 @@
       "source_location": "L240",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_py_train",
-      "target": "trainer_uncertaintylossweighting",
-      "confidence_score": 1.0
+      "target": "trainer_uncertaintylossweighting"
     },
     {
       "relation": "imports_from",
@@ -3798,9 +3965,9 @@
       "source_location": "L41",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_py_train",
-      "target": "utils",
-      "confidence_score": 1.0
+      "target": "utils"
     },
     {
       "relation": "imports",
@@ -3810,9 +3977,9 @@
       "source_location": "L41",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_py_train",
-      "target": "utils_split_train_val",
-      "confidence_score": 1.0
+      "target": "utils_split_train_val"
     },
     {
       "relation": "method",
@@ -3821,9 +3988,9 @@
       "source_location": "L57",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_fsyncfilehandler",
-      "target": "train_fsyncfilehandler_emit",
-      "confidence_score": 1.0
+      "target": "train_fsyncfilehandler_emit"
     },
     {
       "relation": "uses",
@@ -3832,9 +3999,9 @@
       "source_location": "L240",
       "weight": 0.8,
       "_origin": "ast",
+      "confidence_score": 0.5,
       "source": "train_fsyncfilehandler",
-      "target": "trainer_uncertaintylossweighting",
-      "confidence_score": 0.5
+      "target": "trainer_uncertaintylossweighting"
     },
     {
       "relation": "calls",
@@ -3844,9 +4011,9 @@
       "source_location": "L92",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_setup_logging",
-      "target": "train_fsyncfilehandler",
-      "confidence_score": 1.0
+      "target": "train_fsyncfilehandler"
     },
     {
       "relation": "rationale_for",
@@ -3855,9 +4022,9 @@
       "source_location": "L67",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_rationale_67",
-      "target": "train_setup_logging",
-      "confidence_score": 1.0
+      "target": "train_setup_logging"
     },
     {
       "relation": "calls",
@@ -3867,9 +4034,9 @@
       "source_location": "L157",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_run",
-      "target": "train_setup_logging",
-      "confidence_score": 1.0
+      "target": "train_setup_logging"
     },
     {
       "relation": "references",
@@ -3879,9 +4046,9 @@
       "source_location": "L124",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_init_wandb_from_config",
-      "target": "train_py_any",
-      "confidence_score": 1.0
+      "target": "train_py_any"
     },
     {
       "relation": "calls",
@@ -3891,9 +4058,9 @@
       "source_location": "L279",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_run",
-      "target": "train_init_wandb_from_config",
-      "confidence_score": 1.0
+      "target": "train_init_wandb_from_config"
     },
     {
       "relation": "references",
@@ -3903,9 +4070,9 @@
       "source_location": "L144",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_format_lr_summary",
-      "target": "train_py_optimizer",
-      "confidence_score": 1.0
+      "target": "train_py_optimizer"
     },
     {
       "relation": "rationale_for",
@@ -3914,9 +4081,9 @@
       "source_location": "L145",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_rationale_145",
-      "target": "train_format_lr_summary",
-      "confidence_score": 1.0
+      "target": "train_format_lr_summary"
     },
     {
       "relation": "calls",
@@ -3926,9 +4093,9 @@
       "source_location": "L471",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_run",
-      "target": "train_format_lr_summary",
-      "confidence_score": 1.0
+      "target": "train_format_lr_summary"
     },
     {
       "relation": "calls",
@@ -3938,9 +4105,9 @@
       "source_location": "L673",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_main",
-      "target": "train_run",
-      "confidence_score": 1.0
+      "target": "train_run"
     },
     {
       "relation": "rationale_for",
@@ -3949,9 +4116,9 @@
       "source_location": "L156",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_rationale_156",
-      "target": "train_run",
-      "confidence_score": 1.0
+      "target": "train_run"
     },
     {
       "relation": "references",
@@ -3961,9 +4128,9 @@
       "source_location": "L155",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_run",
-      "target": "train_py_namespace",
-      "confidence_score": 1.0
+      "target": "train_py_namespace"
     },
     {
       "relation": "calls",
@@ -3973,9 +4140,9 @@
       "source_location": "L167",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_run",
-      "target": "trainer_build_loss_weights",
-      "confidence_score": 1.0
+      "target": "trainer_build_loss_weights"
     },
     {
       "relation": "calls",
@@ -3985,9 +4152,9 @@
       "source_location": "L245",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_run",
-      "target": "trainer_build_optimizer",
-      "confidence_score": 1.0
+      "target": "trainer_build_optimizer"
     },
     {
       "relation": "calls",
@@ -3997,9 +4164,9 @@
       "source_location": "L252",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_run",
-      "target": "trainer_build_scheduler",
-      "confidence_score": 1.0
+      "target": "trainer_build_scheduler"
     },
     {
       "relation": "calls",
@@ -4009,9 +4176,9 @@
       "source_location": "L518",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_run",
-      "target": "trainer_evaluate_model",
-      "confidence_score": 1.0
+      "target": "trainer_evaluate_model"
     },
     {
       "relation": "calls",
@@ -4021,9 +4188,9 @@
       "source_location": "L474",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_run",
-      "target": "trainer_finetune",
-      "confidence_score": 1.0
+      "target": "trainer_finetune"
     },
     {
       "relation": "calls",
@@ -4033,9 +4200,9 @@
       "source_location": "L264",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_run",
-      "target": "trainer_resume_checkpoint",
-      "confidence_score": 1.0
+      "target": "trainer_resume_checkpoint"
     },
     {
       "relation": "calls",
@@ -4045,9 +4212,9 @@
       "source_location": "L577",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_run",
-      "target": "trainer_save_checkpoint",
-      "confidence_score": 1.0
+      "target": "trainer_save_checkpoint"
     },
     {
       "relation": "calls",
@@ -4057,9 +4224,9 @@
       "source_location": "L241",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_run",
-      "target": "trainer_uncertaintylossweighting",
-      "confidence_score": 1.0
+      "target": "trainer_uncertaintylossweighting"
     },
     {
       "relation": "calls",
@@ -4069,9 +4236,9 @@
       "source_location": "L294",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_run",
-      "target": "utils_split_train_val",
-      "confidence_score": 1.0
+      "target": "utils_split_train_val"
     },
     {
       "relation": "rationale_for",
@@ -4080,9 +4247,9 @@
       "source_location": "L616",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_rationale_616",
-      "target": "train_main",
-      "confidence_score": 1.0
+      "target": "train_main"
     },
     {
       "relation": "defines",
@@ -4091,9 +4258,9 @@
       "source_location": "L15",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_sh_train",
-      "target": "train_cached_path_cache_root",
-      "confidence_score": 1.0
+      "target": "train_cached_path_cache_root"
     },
     {
       "relation": "defines",
@@ -4102,9 +4269,9 @@
       "source_location": "L16",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_sh_train",
-      "target": "train_hf_home",
-      "confidence_score": 1.0
+      "target": "train_hf_home"
     },
     {
       "relation": "defines",
@@ -4113,9 +4280,9 @@
       "source_location": "L9",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_sh_train",
-      "target": "train_kmp_affinity",
-      "confidence_score": 1.0
+      "target": "train_kmp_affinity"
     },
     {
       "relation": "defines",
@@ -4124,9 +4291,9 @@
       "source_location": "L3",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_sh_train",
-      "target": "train_mkl_num_threads",
-      "confidence_score": 1.0
+      "target": "train_mkl_num_threads"
     },
     {
       "relation": "defines",
@@ -4135,9 +4302,9 @@
       "source_location": "L18",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_sh_train",
-      "target": "train_mplconfigdir",
-      "confidence_score": 1.0
+      "target": "train_mplconfigdir"
     },
     {
       "relation": "defines",
@@ -4146,9 +4313,9 @@
       "source_location": "L6",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_sh_train",
-      "target": "train_numexpr_num_threads",
-      "confidence_score": 1.0
+      "target": "train_numexpr_num_threads"
     },
     {
       "relation": "defines",
@@ -4157,9 +4324,9 @@
       "source_location": "L2",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_sh_train",
-      "target": "train_omp_num_threads",
-      "confidence_score": 1.0
+      "target": "train_omp_num_threads"
     },
     {
       "relation": "defines",
@@ -4168,9 +4335,9 @@
       "source_location": "L4",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_sh_train",
-      "target": "train_openblas_num_threads",
-      "confidence_score": 1.0
+      "target": "train_openblas_num_threads"
     },
     {
       "relation": "contains",
@@ -4179,9 +4346,9 @@
       "source_location": "L1",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_sh_train",
-      "target": "train_sh__entry",
-      "confidence_score": 1.0
+      "target": "train_sh__entry"
     },
     {
       "relation": "defines",
@@ -4190,9 +4357,9 @@
       "source_location": "L17",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_sh_train",
-      "target": "train_torch_home",
-      "confidence_score": 1.0
+      "target": "train_torch_home"
     },
     {
       "relation": "defines",
@@ -4201,9 +4368,9 @@
       "source_location": "L21",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_sh_train",
-      "target": "train_torchdynamo_disable",
-      "confidence_score": 1.0
+      "target": "train_torchdynamo_disable"
     },
     {
       "relation": "defines",
@@ -4212,9 +4379,9 @@
       "source_location": "L5",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_sh_train",
-      "target": "train_veclib_maximum_threads",
-      "confidence_score": 1.0
+      "target": "train_veclib_maximum_threads"
     },
     {
       "relation": "defines",
@@ -4223,9 +4390,9 @@
       "source_location": "L12",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "train_sh_train",
-      "target": "train_warp_cache_path",
-      "confidence_score": 1.0
+      "target": "train_warp_cache_path"
     },
     {
       "relation": "contains",
@@ -4234,9 +4401,9 @@
       "source_location": "L56",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer",
-      "target": "trainer_build_loss_weights",
-      "confidence_score": 1.0
+      "target": "trainer_build_loss_weights"
     },
     {
       "relation": "contains",
@@ -4245,9 +4412,9 @@
       "source_location": "L94",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer",
-      "target": "trainer_build_optimizer",
-      "confidence_score": 1.0
+      "target": "trainer_build_optimizer"
     },
     {
       "relation": "contains",
@@ -4256,9 +4423,9 @@
       "source_location": "L133",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer",
-      "target": "trainer_build_scheduler",
-      "confidence_score": 1.0
+      "target": "trainer_build_scheduler"
     },
     {
       "relation": "contains",
@@ -4267,9 +4434,9 @@
       "source_location": "L586",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer",
-      "target": "trainer_evaluate_model",
-      "confidence_score": 1.0
+      "target": "trainer_evaluate_model"
     },
     {
       "relation": "contains",
@@ -4278,9 +4445,9 @@
       "source_location": "L339",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer",
-      "target": "trainer_finetune",
-      "confidence_score": 1.0
+      "target": "trainer_finetune"
     },
     {
       "relation": "contains",
@@ -4289,9 +4456,9 @@
       "source_location": "L277",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer",
-      "target": "trainer_resume_checkpoint",
-      "confidence_score": 1.0
+      "target": "trainer_resume_checkpoint"
     },
     {
       "relation": "contains",
@@ -4300,9 +4467,9 @@
       "source_location": "L237",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer",
-      "target": "trainer_save_checkpoint",
-      "confidence_score": 1.0
+      "target": "trainer_save_checkpoint"
     },
     {
       "relation": "contains",
@@ -4311,9 +4478,9 @@
       "source_location": "L737",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer",
-      "target": "trainer_save_parity_plots",
-      "confidence_score": 1.0
+      "target": "trainer_save_parity_plots"
     },
     {
       "relation": "contains",
@@ -4322,9 +4489,9 @@
       "source_location": "L30",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer",
-      "target": "trainer_uncertaintylossweighting",
-      "confidence_score": 1.0
+      "target": "trainer_uncertaintylossweighting"
     },
     {
       "relation": "imports_from",
@@ -4334,9 +4501,9 @@
       "source_location": "L25",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer",
-      "target": "utils",
-      "confidence_score": 1.0
+      "target": "utils"
     },
     {
       "relation": "imports",
@@ -4346,9 +4513,9 @@
       "source_location": "L25",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer",
-      "target": "utils_build_graph_index",
-      "confidence_score": 1.0
+      "target": "utils_build_graph_index"
     },
     {
       "relation": "imports",
@@ -4358,9 +4525,9 @@
       "source_location": "L25",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer",
-      "target": "utils_prefix_keys",
-      "confidence_score": 1.0
+      "target": "utils_prefix_keys"
     },
     {
       "relation": "rationale_for",
@@ -4369,9 +4536,9 @@
       "source_location": "L31",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_rationale_31",
-      "target": "trainer_uncertaintylossweighting",
-      "confidence_score": 1.0
+      "target": "trainer_uncertaintylossweighting"
     },
     {
       "relation": "method",
@@ -4380,9 +4547,9 @@
       "source_location": "L42",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_uncertaintylossweighting",
-      "target": "trainer_uncertaintylossweighting_forward",
-      "confidence_score": 1.0
+      "target": "trainer_uncertaintylossweighting_forward"
     },
     {
       "relation": "method",
@@ -4391,9 +4558,9 @@
       "source_location": "L32",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_uncertaintylossweighting",
-      "target": "trainer_uncertaintylossweighting_init",
-      "confidence_score": 1.0
+      "target": "trainer_uncertaintylossweighting_init"
     },
     {
       "relation": "references",
@@ -4403,9 +4570,9 @@
       "source_location": "L42",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_uncertaintylossweighting_forward",
-      "target": "trainer_py_tensor",
-      "confidence_score": 1.0
+      "target": "trainer_py_tensor"
     },
     {
       "relation": "references",
@@ -4415,9 +4582,9 @@
       "source_location": "L586",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_evaluate_model",
-      "target": "trainer_py_tensor",
-      "confidence_score": 1.0
+      "target": "trainer_py_tensor"
     },
     {
       "relation": "references",
@@ -4427,9 +4594,9 @@
       "source_location": "L339",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_finetune",
-      "target": "trainer_py_tensor",
-      "confidence_score": 1.0
+      "target": "trainer_py_tensor"
     },
     {
       "relation": "references",
@@ -4439,9 +4606,9 @@
       "source_location": "L277",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_resume_checkpoint",
-      "target": "trainer_py_tensor",
-      "confidence_score": 1.0
+      "target": "trainer_py_tensor"
     },
     {
       "relation": "references",
@@ -4451,9 +4618,9 @@
       "source_location": "L237",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_save_checkpoint",
-      "target": "trainer_py_tensor",
-      "confidence_score": 1.0
+      "target": "trainer_py_tensor"
     },
     {
       "relation": "references",
@@ -4463,9 +4630,9 @@
       "source_location": "L56",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_build_loss_weights",
-      "target": "trainer_py_namespace",
-      "confidence_score": 1.0
+      "target": "trainer_py_namespace"
     },
     {
       "relation": "rationale_for",
@@ -4474,9 +4641,9 @@
       "source_location": "L57",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_rationale_57",
-      "target": "trainer_build_loss_weights",
-      "confidence_score": 1.0
+      "target": "trainer_build_loss_weights"
     },
     {
       "relation": "references",
@@ -4486,9 +4653,9 @@
       "source_location": "L94",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_build_optimizer",
-      "target": "trainer_py_namespace",
-      "confidence_score": 1.0
+      "target": "trainer_py_namespace"
     },
     {
       "relation": "references",
@@ -4498,9 +4665,9 @@
       "source_location": "L133",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_build_scheduler",
-      "target": "trainer_py_namespace",
-      "confidence_score": 1.0
+      "target": "trainer_py_namespace"
     },
     {
       "relation": "references",
@@ -4510,9 +4677,9 @@
       "source_location": "L94",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_build_optimizer",
-      "target": "modelmixin",
-      "confidence_score": 1.0
+      "target": "modelmixin"
     },
     {
       "relation": "references",
@@ -4522,9 +4689,9 @@
       "source_location": "L94",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_build_optimizer",
-      "target": "trainer_py_module",
-      "confidence_score": 1.0
+      "target": "trainer_py_module"
     },
     {
       "relation": "references",
@@ -4534,9 +4701,9 @@
       "source_location": "L94",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_build_optimizer",
-      "target": "trainer_py_optimizer",
-      "confidence_score": 1.0
+      "target": "trainer_py_optimizer"
     },
     {
       "relation": "rationale_for",
@@ -4545,9 +4712,9 @@
       "source_location": "L103",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_rationale_103",
-      "target": "trainer_build_optimizer",
-      "confidence_score": 1.0
+      "target": "trainer_build_optimizer"
     },
     {
       "relation": "references",
@@ -4557,9 +4724,9 @@
       "source_location": "L586",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_evaluate_model",
-      "target": "modelmixin",
-      "confidence_score": 1.0
+      "target": "modelmixin"
     },
     {
       "relation": "references",
@@ -4569,9 +4736,9 @@
       "source_location": "L339",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_finetune",
-      "target": "modelmixin",
-      "confidence_score": 1.0
+      "target": "modelmixin"
     },
     {
       "relation": "references",
@@ -4581,9 +4748,9 @@
       "source_location": "L277",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_resume_checkpoint",
-      "target": "modelmixin",
-      "confidence_score": 1.0
+      "target": "modelmixin"
     },
     {
       "relation": "references",
@@ -4593,9 +4760,9 @@
       "source_location": "L237",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_save_checkpoint",
-      "target": "modelmixin",
-      "confidence_score": 1.0
+      "target": "modelmixin"
     },
     {
       "relation": "references",
@@ -4605,9 +4772,9 @@
       "source_location": "L586",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_evaluate_model",
-      "target": "trainer_py_module",
-      "confidence_score": 1.0
+      "target": "trainer_py_module"
     },
     {
       "relation": "references",
@@ -4617,9 +4784,9 @@
       "source_location": "L339",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_finetune",
-      "target": "trainer_py_module",
-      "confidence_score": 1.0
+      "target": "trainer_py_module"
     },
     {
       "relation": "references",
@@ -4629,9 +4796,9 @@
       "source_location": "L277",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_resume_checkpoint",
-      "target": "trainer_py_module",
-      "confidence_score": 1.0
+      "target": "trainer_py_module"
     },
     {
       "relation": "references",
@@ -4641,9 +4808,9 @@
       "source_location": "L237",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_save_checkpoint",
-      "target": "trainer_py_module",
-      "confidence_score": 1.0
+      "target": "trainer_py_module"
     },
     {
       "relation": "references",
@@ -4653,9 +4820,9 @@
       "source_location": "L133",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_build_scheduler",
-      "target": "trainer_py_optimizer",
-      "confidence_score": 1.0
+      "target": "trainer_py_optimizer"
     },
     {
       "relation": "references",
@@ -4665,9 +4832,9 @@
       "source_location": "L339",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_finetune",
-      "target": "trainer_py_optimizer",
-      "confidence_score": 1.0
+      "target": "trainer_py_optimizer"
     },
     {
       "relation": "references",
@@ -4677,9 +4844,9 @@
       "source_location": "L277",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_resume_checkpoint",
-      "target": "trainer_py_optimizer",
-      "confidence_score": 1.0
+      "target": "trainer_py_optimizer"
     },
     {
       "relation": "references",
@@ -4689,9 +4856,9 @@
       "source_location": "L237",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_save_checkpoint",
-      "target": "trainer_py_optimizer",
-      "confidence_score": 1.0
+      "target": "trainer_py_optimizer"
     },
     {
       "relation": "references",
@@ -4701,9 +4868,9 @@
       "source_location": "L133",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_build_scheduler",
-      "target": "lrscheduler",
-      "confidence_score": 1.0
+      "target": "lrscheduler"
     },
     {
       "relation": "rationale_for",
@@ -4712,9 +4879,9 @@
       "source_location": "L139",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_rationale_139",
-      "target": "trainer_build_scheduler",
-      "confidence_score": 1.0
+      "target": "trainer_build_scheduler"
     },
     {
       "relation": "rationale_for",
@@ -4723,9 +4890,9 @@
       "source_location": "L255",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_rationale_255",
-      "target": "trainer_save_checkpoint",
-      "confidence_score": 1.0
+      "target": "trainer_save_checkpoint"
     },
     {
       "relation": "references",
@@ -4735,9 +4902,9 @@
       "source_location": "L237",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_save_checkpoint",
-      "target": "trainer_py_any",
-      "confidence_score": 1.0
+      "target": "trainer_py_any"
     },
     {
       "relation": "references",
@@ -4747,9 +4914,9 @@
       "source_location": "L586",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_evaluate_model",
-      "target": "trainer_py_any",
-      "confidence_score": 1.0
+      "target": "trainer_py_any"
     },
     {
       "relation": "references",
@@ -4759,9 +4926,9 @@
       "source_location": "L339",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_finetune",
-      "target": "trainer_py_any",
-      "confidence_score": 1.0
+      "target": "trainer_py_any"
     },
     {
       "relation": "references",
@@ -4771,9 +4938,9 @@
       "source_location": "L277",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_resume_checkpoint",
-      "target": "trainer_py_any",
-      "confidence_score": 1.0
+      "target": "trainer_py_any"
     },
     {
       "relation": "rationale_for",
@@ -4782,9 +4949,9 @@
       "source_location": "L290",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_rationale_290",
-      "target": "trainer_resume_checkpoint",
-      "confidence_score": 1.0
+      "target": "trainer_resume_checkpoint"
     },
     {
       "relation": "references",
@@ -4794,9 +4961,9 @@
       "source_location": "L277",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_resume_checkpoint",
-      "target": "trainer_py_device",
-      "confidence_score": 1.0
+      "target": "trainer_py_device"
     },
     {
       "relation": "references",
@@ -4806,9 +4973,9 @@
       "source_location": "L586",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_evaluate_model",
-      "target": "trainer_py_device",
-      "confidence_score": 1.0
+      "target": "trainer_py_device"
     },
     {
       "relation": "references",
@@ -4818,9 +4985,9 @@
       "source_location": "L339",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_finetune",
-      "target": "trainer_py_device",
-      "confidence_score": 1.0
+      "target": "trainer_py_device"
     },
     {
       "relation": "calls",
@@ -4830,9 +4997,9 @@
       "source_location": "L418",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_finetune",
-      "target": "utils_build_graph_index",
-      "confidence_score": 1.0
+      "target": "utils_build_graph_index"
     },
     {
       "relation": "calls",
@@ -4842,9 +5009,9 @@
       "source_location": "L581",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_finetune",
-      "target": "utils_prefix_keys",
-      "confidence_score": 1.0
+      "target": "utils_prefix_keys"
     },
     {
       "relation": "rationale_for",
@@ -4853,9 +5020,9 @@
       "source_location": "L367",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_rationale_367",
-      "target": "trainer_finetune",
-      "confidence_score": 1.0
+      "target": "trainer_finetune"
     },
     {
       "relation": "references",
@@ -4865,9 +5032,9 @@
       "source_location": "L586",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_evaluate_model",
-      "target": "trainer_py_abstractatomsadapter",
-      "confidence_score": 1.0
+      "target": "trainer_py_abstractatomsadapter"
     },
     {
       "relation": "calls",
@@ -4877,9 +5044,9 @@
       "source_location": "L718",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_evaluate_model",
-      "target": "trainer_save_parity_plots",
-      "confidence_score": 1.0
+      "target": "trainer_save_parity_plots"
     },
     {
       "relation": "calls",
@@ -4889,9 +5056,9 @@
       "source_location": "L659",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_evaluate_model",
-      "target": "utils_build_graph_index",
-      "confidence_score": 1.0
+      "target": "utils_build_graph_index"
     },
     {
       "relation": "rationale_for",
@@ -4900,9 +5067,9 @@
       "source_location": "L602",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_rationale_602",
-      "target": "trainer_evaluate_model",
-      "confidence_score": 1.0
+      "target": "trainer_evaluate_model"
     },
     {
       "relation": "rationale_for",
@@ -4911,9 +5078,9 @@
       "source_location": "L752",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_rationale_752",
-      "target": "trainer_save_parity_plots",
-      "confidence_score": 1.0
+      "target": "trainer_save_parity_plots"
     },
     {
       "relation": "references",
@@ -4923,9 +5090,9 @@
       "source_location": "L737",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "trainer_save_parity_plots",
-      "target": "ndarray",
-      "confidence_score": 1.0
+      "target": "ndarray"
     },
     {
       "relation": "contains",
@@ -4934,9 +5101,9 @@
       "source_location": "L37",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "utils",
-      "target": "utils_build_graph_index",
-      "confidence_score": 1.0
+      "target": "utils_build_graph_index"
     },
     {
       "relation": "contains",
@@ -4945,9 +5112,9 @@
       "source_location": "L32",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "utils",
-      "target": "utils_prefix_keys",
-      "confidence_score": 1.0
+      "target": "utils_prefix_keys"
     },
     {
       "relation": "contains",
@@ -4956,9 +5123,9 @@
       "source_location": "L17",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "utils",
-      "target": "utils_scatter_mean",
-      "confidence_score": 1.0
+      "target": "utils_scatter_mean"
     },
     {
       "relation": "contains",
@@ -4967,9 +5134,9 @@
       "source_location": "L6",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "utils",
-      "target": "utils_scatter_sum",
-      "confidence_score": 1.0
+      "target": "utils_scatter_sum"
     },
     {
       "relation": "contains",
@@ -4978,9 +5145,9 @@
       "source_location": "L47",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "utils",
-      "target": "utils_split_train_val",
-      "confidence_score": 1.0
+      "target": "utils_split_train_val"
     },
     {
       "relation": "rationale_for",
@@ -4989,9 +5156,9 @@
       "source_location": "L7",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "utils_rationale_7",
-      "target": "utils_scatter_sum",
-      "confidence_score": 1.0
+      "target": "utils_scatter_sum"
     },
     {
       "relation": "references",
@@ -5001,9 +5168,9 @@
       "source_location": "L6",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "utils_scatter_sum",
-      "target": "utils_py_tensor",
-      "confidence_score": 1.0
+      "target": "utils_py_tensor"
     },
     {
       "relation": "references",
@@ -5013,9 +5180,9 @@
       "source_location": "L37",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "utils_build_graph_index",
-      "target": "utils_py_tensor",
-      "confidence_score": 1.0
+      "target": "utils_py_tensor"
     },
     {
       "relation": "references",
@@ -5025,9 +5192,9 @@
       "source_location": "L17",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "utils_scatter_mean",
-      "target": "utils_py_tensor",
-      "confidence_score": 1.0
+      "target": "utils_py_tensor"
     },
     {
       "relation": "rationale_for",
@@ -5036,9 +5203,9 @@
       "source_location": "L18",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "utils_rationale_18",
-      "target": "utils_scatter_mean",
-      "confidence_score": 1.0
+      "target": "utils_scatter_mean"
     },
     {
       "relation": "references",
@@ -5048,9 +5215,9 @@
       "source_location": "L32",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "utils_prefix_keys",
-      "target": "utils_py_any",
-      "confidence_score": 1.0
+      "target": "utils_py_any"
     },
     {
       "relation": "rationale_for",
@@ -5059,9 +5226,9 @@
       "source_location": "L33",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "utils_rationale_33",
-      "target": "utils_prefix_keys",
-      "confidence_score": 1.0
+      "target": "utils_prefix_keys"
     },
     {
       "relation": "references",
@@ -5071,9 +5238,9 @@
       "source_location": "L37",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "utils_build_graph_index",
-      "target": "utils_py_device",
-      "confidence_score": 1.0
+      "target": "utils_py_device"
     },
     {
       "relation": "rationale_for",
@@ -5082,9 +5249,9 @@
       "source_location": "L38",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "utils_rationale_38",
-      "target": "utils_build_graph_index",
-      "confidence_score": 1.0
+      "target": "utils_build_graph_index"
     },
     {
       "relation": "rationale_for",
@@ -5093,9 +5260,9 @@
       "source_location": "L52",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "utils_rationale_52",
-      "target": "utils_split_train_val",
-      "confidence_score": 1.0
+      "target": "utils_split_train_val"
     },
     {
       "relation": "references",

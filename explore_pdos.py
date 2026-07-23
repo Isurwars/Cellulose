@@ -8,7 +8,6 @@ explore_pdos.py — Reads CASTEP pdos_bin and outputs a human-readable text repo
 import castepxbin
 import numpy as np
 import os
-import re
 import csv
 
 from extract_pdos import parse_manual_castep

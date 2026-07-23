@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from utils import scatter_mean, scatter_sum
+from utils import scatter_sum
 
 NUM_BANDS = 250
 
@@ -29,11 +29,13 @@ class AttentionPool(nn.Module):
         super().__init__()
         self.gate = nn.Linear(dim, 1)  # raw logits (no activation)
 
-    def forward(self, x: torch.Tensor, graph_idx: torch.Tensor) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, graph_idx: torch.Tensor, num_graphs: int | None = None) -> torch.Tensor:
         logits = self.gate(x)  # [N_nodes, 1]
 
         # Numerically stable per-graph softmax
-        num_graphs = int(graph_idx.max().item()) + 1
+        if num_graphs is None:
+            num_graphs = int(graph_idx.max().item()) + 1
+
         max_logits = logits.new_full((num_graphs, 1), float("-inf"))
         max_logits.scatter_reduce_(0, graph_idx.unsqueeze(1), logits, reduce="amax")
         logits = logits - max_logits[graph_idx]  # shift for stability
@@ -43,7 +45,7 @@ class AttentionPool(nn.Module):
         sum_exp.index_add_(0, graph_idx, exp_logits)
         attn_weights = exp_logits / sum_exp[graph_idx].clamp(min=1e-8)  # [N_nodes, 1]
 
-        return scatter_sum(x * attn_weights, graph_idx, dim=0)
+        return scatter_sum(x * attn_weights, graph_idx, dim=0, dim_size=num_graphs)
 
 
 class ForceResidualHead(nn.Module):
