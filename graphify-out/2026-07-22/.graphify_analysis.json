@@ -1,0 +1,322 @@
+{
+  "communities": {
+    "0": [
+      "models",
+      "train_format_lr_summary",
+      "train_fsyncfilehandler",
+      "train_fsyncfilehandler_emit",
+      "train_init_wandb_from_config",
+      "train_main",
+      "train_py_any",
+      "train_py_namespace",
+      "train_py_optimizer",
+      "train_py_train",
+      "train_rationale_145",
+      "train_rationale_156",
+      "train_rationale_616",
+      "train_rationale_67",
+      "train_run",
+      "train_setup_logging",
+      "trainer_rationale_31",
+      "trainer_uncertaintylossweighting",
+      "trainer_uncertaintylossweighting_init",
+      "utils",
+      "utils_build_graph_index",
+      "utils_prefix_keys",
+      "utils_py_any",
+      "utils_py_device",
+      "utils_py_tensor",
+      "utils_rationale_18",
+      "utils_rationale_33",
+      "utils_rationale_38",
+      "utils_rationale_52",
+      "utils_rationale_7",
+      "utils_scatter_mean",
+      "utils_scatter_sum",
+      "utils_split_train_val"
+    ],
+    "1": [
+      "lrscheduler",
+      "modelmixin",
+      "models_attentionpool",
+      "models_forceresidualhead",
+      "models_rationale_23",
+      "models_rationale_50",
+      "ndarray",
+      "trainer",
+      "trainer_build_loss_weights",
+      "trainer_build_optimizer",
+      "trainer_build_scheduler",
+      "trainer_evaluate_model",
+      "trainer_finetune",
+      "trainer_py_abstractatomsadapter",
+      "trainer_py_any",
+      "trainer_py_device",
+      "trainer_py_module",
+      "trainer_py_namespace",
+      "trainer_py_optimizer",
+      "trainer_py_tensor",
+      "trainer_rationale_103",
+      "trainer_rationale_139",
+      "trainer_rationale_255",
+      "trainer_rationale_290",
+      "trainer_rationale_367",
+      "trainer_rationale_57",
+      "trainer_rationale_602",
+      "trainer_rationale_752",
+      "trainer_resume_checkpoint",
+      "trainer_save_checkpoint",
+      "trainer_save_parity_plots",
+      "trainer_uncertaintylossweighting_forward"
+    ],
+    "2": [
+      "asesqlitedataset",
+      "data",
+      "data_build_train_loader",
+      "data_cache_eval_frames",
+      "data_extract_eigenvalues",
+      "data_extract_weights",
+      "data_load_custom_reference_energies",
+      "data_localsubgraphsdataset",
+      "data_localsubgraphsdataset_getitem",
+      "data_localsubgraphsdataset_init",
+      "data_localsubgraphsdataset_len",
+      "data_py_abstractatomsadapter",
+      "data_py_any",
+      "data_py_tensor",
+      "data_rationale_21",
+      "data_rationale_26",
+      "data_rationale_295",
+      "data_rationale_353",
+      "data_rationale_46",
+      "data_rationale_99",
+      "dataloader"
+    ],
+    "3": [
+      "models_attentionpool_forward",
+      "models_attentionpool_init",
+      "models_build_heads",
+      "models_forceresidualhead_forward",
+      "models_forceresidualhead_init",
+      "models_py_device",
+      "models_py_module",
+      "models_py_tensor",
+      "models_rationale_131",
+      "models_rationale_71",
+      "models_rationale_76",
+      "models_rationale_8",
+      "models_residualblock",
+      "models_residualblock_forward",
+      "models_residualblock_init",
+      "models_weighthead",
+      "models_weighthead_forward",
+      "models_weighthead_init"
+    ],
+    "4": [
+      "losses",
+      "losses_compute_eigenvalue_loss",
+      "losses_compute_electronic_losses",
+      "losses_compute_energy_loss",
+      "losses_compute_force_loss",
+      "losses_compute_r2",
+      "losses_compute_stress_loss",
+      "losses_compute_weight_loss",
+      "losses_py_device",
+      "losses_py_tensor",
+      "losses_rationale_122",
+      "losses_rationale_167",
+      "losses_rationale_23",
+      "losses_rationale_55",
+      "losses_rationale_6",
+      "losses_rationale_76",
+      "losses_rationale_97"
+    ],
+    "5": [
+      "train_cached_path_cache_root",
+      "train_hf_home",
+      "train_kmp_affinity",
+      "train_mkl_num_threads",
+      "train_mplconfigdir",
+      "train_numexpr_num_threads",
+      "train_omp_num_threads",
+      "train_openblas_num_threads",
+      "train_sh__entry",
+      "train_sh_train",
+      "train_torch_home",
+      "train_torchdynamo_disable",
+      "train_veclib_maximum_threads",
+      "train_warp_cache_path"
+    ],
+    "6": [
+      "explore_pdos",
+      "explore_pdos_main",
+      "extract_pdos",
+      "extract_pdos_create_orb_database",
+      "extract_pdos_main",
+      "extract_pdos_parse_manual_bands",
+      "extract_pdos_parse_manual_castep",
+      "extract_pdos_rationale_127",
+      "extract_pdos_rationale_157",
+      "extract_pdos_transform_target",
+      "extract_pdos_write_mace_dataset"
+    ],
+    "7": [
+      "agents_agents",
+      "agents_rules_caveman_navigation",
+      "agents_rules_code_style_guide",
+      "agents_skills_caveman_communication",
+      "agents_skills_graphify_maintenance",
+      "agents_skills_python_pytorch_standards",
+      "agents_skills_pytorch_cuda_sanitizer",
+      "agents_skills_test_and_tea_loop"
+    ],
+    "8": [
+      "run_finetune",
+      "run_finetune_get_gpu_vram_gb",
+      "run_finetune_get_system_ram_gb",
+      "run_finetune_main",
+      "run_finetune_rationale_23",
+      "run_finetune_rationale_36"
+    ],
+    "9": [
+      "doc_code_of_conduct",
+      "doc_contributing",
+      "github_issue_template_bug_report",
+      "github_issue_template_feature_request",
+      "github_pull_request_template"
+    ],
+    "10": [
+      "doc_security"
+    ],
+    "11": [
+      "pkg_cellulose"
+    ]
+  },
+  "cohesion": {
+    "0": 0.08712121212121213,
+    "1": 0.12903225806451613,
+    "2": 0.14761904761904762,
+    "3": 0.13725490196078433,
+    "4": 0.22058823529411764,
+    "5": 0.14285714285714285,
+    "6": 0.3090909090909091,
+    "7": 0.32142857142857145,
+    "8": 0.4666666666666667,
+    "9": 0.4,
+    "10": 1.0,
+    "11": 1.0
+  },
+  "gods": [
+    {
+      "id": "train_run",
+      "label": "run()",
+      "degree": 21
+    },
+    {
+      "id": "trainer_finetune",
+      "label": "finetune()",
+      "degree": 17
+    },
+    {
+      "id": "trainer_evaluate_model",
+      "label": "evaluate_model()",
+      "degree": 14
+    },
+    {
+      "id": "models_attentionpool",
+      "label": "AttentionPool",
+      "degree": 12
+    },
+    {
+      "id": "models_forceresidualhead",
+      "label": "ForceResidualHead",
+      "degree": 12
+    },
+    {
+      "id": "trainer_resume_checkpoint",
+      "label": "resume_checkpoint()",
+      "degree": 12
+    },
+    {
+      "id": "trainer_save_checkpoint",
+      "label": "save_checkpoint()",
+      "degree": 11
+    },
+    {
+      "id": "models_build_heads",
+      "label": "build_heads()",
+      "degree": 10
+    },
+    {
+      "id": "trainer_uncertaintylossweighting",
+      "label": "UncertaintyLossWeighting",
+      "degree": 10
+    },
+    {
+      "id": "trainer_build_optimizer",
+      "label": "build_optimizer()",
+      "degree": 10
+    }
+  ],
+  "surprises": [
+    {
+      "source": "UncertaintyLossWeighting",
+      "target": "AttentionPool",
+      "source_files": [
+        "trainer.py",
+        "models.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "UncertaintyLossWeighting",
+      "target": "ForceResidualHead",
+      "source_files": [
+        "trainer.py",
+        "models.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "UncertaintyLossWeighting",
+      "target": "WeightHead",
+      "source_files": [
+        "trainer.py",
+        "models.py"
+      ],
+      "confidence": "INFERRED",
+      "relation": "uses",
+      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "run()",
+      "target": "load_custom_reference_energies()",
+      "source_files": [
+        "train.py",
+        "data.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    },
+    {
+      "source": "run()",
+      "target": "LocalSubgraphsDataset",
+      "source_files": [
+        "train.py",
+        "data.py"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; bridges separate communities"
+    }
+  ],
+  "tokens": {
+    "input": 9877,
+    "output": 1864
+  }
+}
